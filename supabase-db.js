@@ -34,6 +34,8 @@ window.KSGDb = (function () {
       msg: row.msg,
       time: row.time,
       user: row.user_email,
+      action: row.action || 'general',
+      userId: row.user_id,
     };
   }
 
@@ -157,17 +159,33 @@ window.KSGDb = (function () {
     if (error) throw error;
   }
 
-  async function insertLog(msg, userEmail) {
+  async function insertLog(msg, userEmail, userId, action = 'general') {
     const sb = db();
     const { error } = await sb.from('activity_logs').insert({
       msg,
       user_email: userEmail || 'system',
       time: new Date().toISOString(),
+      action: action,
+      user_id: userId,
     });
     if (error) throw error;
   }
 
-  async function clearLogs() {
+  async function getLogs(limit = 200) {
+    const sb = db();
+    const { data, error } = await sb
+      .from('activity_logs')
+      .select('*')
+      .order('time', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data || []).map(mapLog);
+  }
+
+  async function clearLogs(userRole) {
+    if (userRole !== 'superadmin') {
+      throw new Error('Only superadmins can clear logs');
+    }
     const sb = db();
     const { error } = await sb.from('activity_logs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     if (error) throw error;
@@ -208,6 +226,7 @@ window.KSGDb = (function () {
     deleteTag,
     deleteAllTags,
     insertLog,
+    getLogs,
     clearLogs,
     upsertSettings,
     getProfile,

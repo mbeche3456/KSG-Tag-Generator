@@ -127,7 +127,7 @@ create policy "tags_delete_authenticated"
   to authenticated
   using (true);
 
--- Activity logs
+-- Activity logs (Superadmin only for delete)
 create policy "logs_select_authenticated"
   on public.activity_logs for select
   to authenticated
@@ -138,10 +138,14 @@ create policy "logs_insert_authenticated"
   to authenticated
   with check (true);
 
-create policy "logs_delete_authenticated"
+create policy "logs_delete_superadmin_only"
   on public.activity_logs for delete
   to authenticated
-  using (true);
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE role = 'superadmin'
+    )
+  );
 
 -- App settings (shared org config)
 create policy "settings_select_authenticated"

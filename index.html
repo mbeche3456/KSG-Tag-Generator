@@ -543,7 +543,46 @@
   @media print {
     body * { visibility: hidden; }
     .id-tag, .id-tag * { visibility: visible; }
-    .id-tag { position: fixed; top: 20mm; left: 50%; transform: translateX(-50%); box-shadow: none; }
+    .id-tag {
+      position: fixed; top: 20mm; left: 50%; transform: translateX(-50%);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
+      background: #ffffff !important;
+      width: 360px !important;
+      height: 225px !important;
+      border: 1px solid rgba(0,0,0,0.08) !important;
+      border-radius: 4px !important;
+    }
+    .id-tag .wave-svg { display: block !important; }
+    .id-tag .tag-coa { display: block !important; }
+    .id-tag .tag-ksg { display: block !important; }
+    .id-tag .tag-org-name {
+      position: absolute !important; top: 36% !important; left: 0 !important; right: 0 !important;
+      text-align: center; font-family: Arial, sans-serif !important;
+      font-weight: 800 !important; font-size: 0.62rem !important;
+      color: #7F622C !important; letter-spacing: 0.5px !important;
+      transform: none !important;
+    }
+    .id-tag .tag-name {
+      position: absolute !important; top: 44% !important; left: 0 !important; right: 0 !important;
+      text-align: center; font-family: Georgia, 'Times New Roman', serif !important;
+      font-weight: 700 !important; font-size: 1.18rem !important;
+      color: #000 !important; line-height: 1.1; padding: 0 6px !important;
+      transform: none !important;
+    }
+    .id-tag .tag-position {
+      position: absolute !important; top: 61% !important; left: 0 !important; right: 0 !important;
+      text-align: center; font-family: Georgia, 'Times New Roman', serif !important;
+      font-weight: 700 !important; font-size: 0.82rem !important;
+      color: #000 !important; text-transform: uppercase; letter-spacing: 0.5px !important;
+      transform: none !important;
+    }
+    .id-tag .tag-dept {
+      position: absolute !important; top: 76% !important; left: 0 !important; right: 0 !important;
+      text-align: center; font-family: Georgia, 'Times New Roman', serif !important;
+      font-weight: 700 !important; font-size: 0.96rem !important;
+      color: #000 !important; text-transform: uppercase; letter-spacing: 0.5px !important;
+      padding: 0 8px !important; transform: none !important;
+    }
   }
 
   /* ─── MISC ─── */
@@ -613,7 +652,7 @@
     <div class="auth-logo">
       <div class="crest">🏛️</div>
       <h1>Kenya School of Government</h1>
-      <p>ICT Department · Tag Generator</p>
+      <p>EMBU CAMPUS · Tag Generator</p>
     </div>
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
@@ -683,7 +722,7 @@
       <div class="sidebar-logo">
         <div class="logo-mark">🏛️</div>
         <h2>KSG Tag System</h2>
-        <span>ICT Department</span>
+        <span>EMBU CAMPUS</span>
       </div>
       <nav class="sidebar-nav">
         <div class="nav-section">
@@ -735,9 +774,6 @@
 
         <!-- ── DASHBOARD ── -->
         <div class="page active" id="page-dashboard">
-          <div class="supabase-note">
-            <strong>⚡ Supabase Integration:</strong> Connect your Supabase project by adding your <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> in Settings → Integration. All data will sync to your database in real time.
-          </div>
           <div class="stats-grid">
             <div class="stat-card gold">
               <div class="stat-icon">🏷️</div>
@@ -862,10 +898,8 @@
                   </select>
                 </div>
                 <div class="form-actions">
-                  <button class="btn btn-gold" onclick="saveTag()">💾 Save & Generate</button>
-                  <button class="btn btn-dark" onclick="downloadTagPDF()">📄 PDF</button>
-                  <button class="btn btn-dark" onclick="downloadTagPNG()">🖼️ PNG</button>
-                  <button class="btn btn-outline" onclick="printTag()">🖨️ Print</button>
+                  <button class="btn btn-gold" onclick="generateTagPDF()">📄 Generate PDF</button>
+                  <button class="btn btn-dark" onclick="generateTagPNG()">🖼️ Generate PNG</button>
                   <button class="btn btn-outline" onclick="clearForm()">✕ Clear</button>
                 </div>
 
@@ -936,10 +970,8 @@
                   </div>
                 </div>
                 <div class="preview-actions">
-                  <button class="btn btn-gold btn-sm" onclick="saveTag()">💾 Save</button>
-                  <button class="btn btn-dark btn-sm" onclick="downloadTagPDF()">📄 PDF</button>
-                  <button class="btn btn-dark btn-sm" onclick="downloadTagPNG()">🖼️ PNG</button>
-                  <button class="btn btn-outline btn-sm" onclick="printTag()">🖨️ Print</button>
+                  <button class="btn btn-gold btn-sm" onclick="generateTagPDF()">📄 Generate PDF</button>
+                  <button class="btn btn-dark btn-sm" onclick="generateTagPNG()">🖼️ Generate PNG</button>
                 </div>
               </div>
             </div>
@@ -1148,12 +1180,38 @@
         <div class="page" id="page-logs">
           <div class="page-header">
             <h2>Activity Logs</h2>
-            <p>Full audit trail of all system actions</p>
+            <p>Full audit trail of all system actions and events</p>
+          </div>
+          <div class="stats-grid" style="margin-bottom: 24px;">
+            <div class="stat-card gold">
+              <div class="stat-icon">📝</div>
+              <div class="stat-value" id="log-total">0</div>
+              <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-card blue">
+              <div class="stat-icon">👤</div>
+              <div class="stat-value" id="log-users">1</div>
+              <div class="stat-label">Active Users</div>
+            </div>
+            <div class="stat-card green">
+              <div class="stat-icon">📅</div>
+              <div class="stat-value" id="log-today">0</div>
+              <div class="stat-label">Today's Events</div>
+            </div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);">
+              <div class="stat-icon">🔐</div>
+              <div class="stat-value" id="log-role">—</div>
+              <div class="stat-label">Your Role</div>
+            </div>
           </div>
           <div class="card">
             <div class="card-header">
               <span class="card-title">System Activity</span>
-              <button class="btn btn-outline btn-sm" onclick="clearLogs()">🗑️ Clear Logs</button>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="logs-search" placeholder="Search logs..." style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--ksg-light); width: 200px; font-size: 0.85rem;">
+                <button class="btn btn-dark btn-sm" onclick="exportLogs()">📥 Export</button>
+                <button class="btn btn-outline btn-sm" id="clear-logs-btn" onclick="clearLogs()" style="display: none;">🗑️ Clear Logs</button>
+              </div>
             </div>
             <div class="card-body" id="logs-body">
               <div class="empty-state"><div class="empty-icon">📝</div><p>No activity logged yet</p></div>
@@ -1168,7 +1226,7 @@
 
 <!-- ── MODAL: VIEW TAG ── -->
 <div class="modal-overlay" id="modal-view">
-  <div class="modal" style="width:360px">
+  <div class="modal" style="width:700px">
     <div class="modal-header">
       <span class="modal-title">Tag Preview</span>
       <button class="modal-close" onclick="closeModal('modal-view')">✕</button>
@@ -1186,33 +1244,33 @@
 
 <!-- ── MODAL: EDIT TAG ── -->
 <div class="modal-overlay" id="modal-edit">
-  <div class="modal">
-    <div class="modal-header">
+  <div class="modal" style="background: #1a1a1a; color: #f0f0f0">
+    <div class="modal-header" style="border-bottom-color: #333; color: #f0f0f0">
       <span class="modal-title">Edit Tag</span>
-      <button class="modal-close" onclick="closeModal('modal-edit')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-edit')" style="color: #999">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit-id">
       <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Full Name</label>
-        <input type="text" id="edit-name" style="width:100%;padding:10px 13px;border:1.5px solid var(--ksg-light);border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif">
+        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Full Name</label>
+        <input type="text" id="edit-name" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
       </div>
       <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Department</label>
-        <input type="text" id="edit-dept" style="width:100%;padding:10px 13px;border:1.5px solid var(--ksg-light);border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif">
+        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Department</label>
+        <input type="text" id="edit-dept" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
       </div>
       <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Position</label>
-        <input type="text" id="edit-pos" style="width:100%;padding:10px 13px;border:1.5px solid var(--ksg-light);border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif">
+        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Position</label>
+        <input type="text" id="edit-pos" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
       </div>
       <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px">Status</label>
-        <select id="edit-status" style="width:100%;padding:10px 13px;border:1.5px solid var(--ksg-light);border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif">
+        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Status</label>
+        <select id="edit-status" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
           <option>Active</option><option>Inactive</option><option>Expired</option>
         </select>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="modal-footer" style="border-top-color: #333">
       <button class="btn btn-outline" onclick="closeModal('modal-edit')">Cancel</button>
       <button class="btn btn-gold" onclick="saveEdit()">💾 Save Changes</button>
     </div>
@@ -1322,12 +1380,16 @@ async function doLogin(){
     }catch(e){ showAuthAlert('login', e.message||'Login failed.', 'error'); return; }
   }
   const stored = localStorage.getItem('ksg_users');
-  const users = stored ? JSON.parse(stored) : [{email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'}];
+  const users = stored ? JSON.parse(stored) : [
+    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'},
+    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'superadmin'}
+  ];
   const user = users.find(u=>u.email===email&&u.pass===pass);
   if(!user){ showAuthAlert('login','Invalid email or password.','error'); return; }
   STATE.user = user;
   localStorage.setItem('ksg_user', JSON.stringify(user));
   initApp();
+  logActivity(`User logged in: ${email} (${user.role})`, 'login');
 }
 
 async function doRegister(){
@@ -1351,7 +1413,10 @@ async function doRegister(){
     }catch(e){ showAuthAlert('reg', e.message||'Registration failed.', 'error'); return; }
   }
   const stored = localStorage.getItem('ksg_users');
-  const users = stored ? JSON.parse(stored) : [{email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'}];
+  const users = stored ? JSON.parse(stored) : [
+    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'},
+    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'superadmin'}
+  ];
   if(users.find(u=>u.email===email)){ showAuthAlert('reg','Email already registered.','error'); return; }
   users.push({email,pass,name,role});
   localStorage.setItem('ksg_users', JSON.stringify(users));
@@ -1391,13 +1456,13 @@ function showAuthAlert(form,msg,type){
 }
 
 async function doLogout(){
+  logActivity(`User logged out: ${STATE.user?.email}`, 'logout');
   if(KSGSupabase.isConnected()){
     try{ await KSGSupabase.getClient().auth.signOut(); }catch(e){}
   }
   STATE.user=null; localStorage.removeItem('ksg_user');
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
-  logActivity('User logged out');
 }
 
 // ─── APP INIT ─────────────────────────────────
@@ -1418,7 +1483,7 @@ async function initApp(){
   applySettings();
   refreshTagDataViews();
   updateTagPreviewInit();
-  logActivity('User logged in: '+STATE.user.email);
+  logActivity(`User logged in: ${STATE.user.email} (${STATE.user.role})`, 'login');
   toast('Welcome back, '+(STATE.user.name||'Admin')+'! 👋');
 }
 
@@ -1471,13 +1536,33 @@ function updatePreview(){
   document.getElementById('pt-position').textContent = (pos||cat||'POSITION / ROLE').toUpperCase();
 }
 
+function getTagFormData(){
+  const full_name = document.getElementById('f-name').value.trim();
+  const department = document.getElementById('f-dept').value;
+  const category = document.getElementById('f-cat').value;
+  let position = document.getElementById('f-position').value.trim();
+  let id_number = document.getElementById('f-idnum').value.trim();
+  if(!position) position = category;
+  if(!id_number) id_number = currentRef;
+  return {
+    reference_number: currentRef,
+    full_name,
+    department,
+    position,
+    category,
+    id_number,
+    status: document.getElementById('f-status').value || 'Active',
+    date_generated: new Date().toISOString(),
+    created_by: STATE.user?.email || 'system',
+  };
+}
+
 // ─── FORM VALIDATION ──────────────────────────
 function validateForm(){
   let ok=true;
-  const fields=[{id:'f-name',err:'err-name',msg:'Full name is required'},
-    {id:'f-idnum',err:'err-idnum',msg:'ID number is required'},
+  const fields=[
+    {id:'f-name',err:'err-name',msg:'Full name is required'},
     {id:'f-dept',err:'err-dept',msg:'Department is required'},
-    {id:'f-position',err:'err-position',msg:'Position is required'},
     {id:'f-cat',err:'err-cat',msg:'Category is required'}];
   fields.forEach(f=>{
     const val=document.getElementById(f.id).value.trim();
@@ -1487,46 +1572,125 @@ function validateForm(){
     else { errEl.textContent=''; inputEl.classList.remove('error'); }
   });
   if(ok && STATE.settings.dup){
-    const idnum=document.getElementById('f-idnum').value.trim();
+    const idnum=getTagFormData().id_number;
     if(STATE.tags.find(t=>t.id_number===idnum)){
-      document.getElementById('err-idnum').textContent='This ID number already exists!';
-      document.getElementById('f-idnum').classList.add('error');
+      const errEl=document.getElementById('err-idnum');
+      if(errEl) errEl.textContent='This ID number already exists!';
       ok=false;
     }
   }
   return ok;
 }
 
+function getJsPDF(){
+  const lib = window.jspdf?.jsPDF || window.jsPDF;
+  if(!lib) throw new Error('PDF library failed to load. Check your internet connection.');
+  return lib;
+}
+
+async function captureTagElement(el){
+  if(!window.html2canvas) throw new Error('Image capture library failed to load.');
+  return html2canvas(el, {
+    scale: 2,
+    backgroundColor: '#ffffff',
+    useCORS: true,
+    allowTaint: true,
+    logging: false,
+    width: el.offsetWidth,
+    height: el.offsetHeight,
+    onclone: (clonedDoc, clonedEl) => {
+      clonedEl.style.background = 'none';
+      const bg = clonedDoc.createElement('img');
+      bg.src = 'template.png';
+      bg.alt = '';
+      bg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:fill;z-index:0;pointer-events:none';
+      bg.onerror = () => { bg.style.display = 'none'; clonedEl.style.background = '#ffffff'; };
+      clonedEl.insertBefore(bg, clonedEl.firstChild);
+      clonedEl.querySelectorAll('.tag-content, [id^="pt-"], .tag-name, .tag-dept, .tag-position, .tag-org-name').forEach(node=>{
+        node.style.position = node.style.position || 'absolute';
+        node.style.zIndex = '2';
+      });
+    },
+  });
+}
+
+async function exportTagCanvas(el){
+  updatePreview();
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  return captureTagElement(el);
+}
+
 // ─── SAVE TAG ─────────────────────────────────
-async function saveTag(){
+async function persistCurrentTag(){
+  const data = getTagFormData();
+  const ref = data.reference_number;
+  const tag={ ...data };
+  if(KSGDb.enabled()){
+    const saved = await KSGDb.insertTag(tag, STATE.user?.email, STATE.user?.id);
+    STATE.tags.unshift(saved);
+  } else {
+    tag.id = Date.now();
+    STATE.tags.unshift(tag);
+  }
+  saveLocal();
+  STATE.currentPage = 1;
+  refreshTagDataViews();
+  logActivity(`Tag generated: ${tag.full_name} (${ref}) - Category: ${tag.category}`, 'tag_generated');
+  return { tag: STATE.tags[0], ref, name: tag.full_name };
+}
+
+async function generateTagPDF(){
   if(!validateForm()) return;
-  const tag={
-    reference_number: currentRef,
-    full_name: document.getElementById('f-name').value.trim(),
-    department: document.getElementById('f-dept').value,
-    position: document.getElementById('f-position').value.trim(),
-    category: document.getElementById('f-cat').value,
-    id_number: document.getElementById('f-idnum').value.trim(),
-    status: document.getElementById('f-status').value,
-    date_generated: new Date().toISOString(),
-    created_by: STATE.user.email
-  };
+  const ref = currentRef;
+  const el = document.getElementById('id-tag');
+  if(!el){ toast('Tag preview not found.', 'error'); return; }
   try{
-    if(KSGDb.enabled()){
-      const saved = await KSGDb.insertTag(tag, STATE.user.email, STATE.user.id);
-      STATE.tags.unshift(saved);
-    } else {
-      tag.id = Date.now();
-      STATE.tags.unshift(tag);
+    const canvas = await exportTagCanvas(el);
+    const img = canvas.toDataURL('image/png');
+    const JsPDF = getJsPDF();
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
+    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
+    const imgW = 86, imgH = (canvas.height / canvas.width) * imgW;
+    pdf.addImage(img, 'PNG', (pw - imgW) / 2, (ph - imgH) / 2, imgW, imgH);
+    pdf.save(`KSG-Tag-${ref}.pdf`);
+    try{
+      const saved = await persistCurrentTag();
+      updateTagPreviewInit();
+      updatePreview();
+      toast(`PDF generated for ${saved.name}. Updated in Manage Tags & Reports.`, 'success');
+    }catch(e){
+      toast('PDF downloaded but tag could not be saved: ' + e.message, 'error');
     }
-    saveLocal();
-    STATE.currentPage = 1;
-    refreshTagDataViews();
-    logActivity(`Tag generated: ${tag.full_name} (${tag.reference_number})`);
-    toast(`Tag for ${tag.full_name} saved successfully! ✅`, 'success');
-    updateTagPreviewInit();
   }catch(e){
-    toast('Failed to save tag: '+e.message, 'error');
+    toast('PDF generation failed: ' + (e.message || 'Unknown error'), 'error');
+    console.error(e);
+  }
+}
+
+async function generateTagPNG(){
+  if(!validateForm()) return;
+  const ref = currentRef;
+  const el = document.getElementById('id-tag');
+  if(!el){ toast('Tag preview not found.', 'error'); return; }
+  try{
+    const canvas = await exportTagCanvas(el);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `KSG-Tag-${ref}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    try{
+      const saved = await persistCurrentTag();
+      updateTagPreviewInit();
+      updatePreview();
+      toast(`PNG generated for ${saved.name}. Updated in Manage Tags & Reports.`, 'success');
+    }catch(e){
+      toast('PNG downloaded but tag could not be saved: ' + e.message, 'error');
+    }
+  }catch(e){
+    toast('PNG generation failed: ' + (e.message || 'Unknown error'), 'error');
+    console.error(e);
   }
 }
 
@@ -1539,31 +1703,7 @@ function clearForm(){
   updateTagPreviewInit();
 }
 
-// ─── DOWNLOAD / PRINT ─────────────────────────
-async function downloadTagPDF(){
-  const el=document.getElementById('id-tag');
-  try{
-    const canvas=await html2canvas(el,{scale:3,backgroundColor:'#ffffff',useCORS:true});
-    const img=canvas.toDataURL('image/png');
-    const {jsPDF}=window.jspdf;
-    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[90,56]});
-    const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
-    const imgW=86, imgH=(canvas.height/canvas.width)*imgW;
-    pdf.addImage(img,'PNG',(pw-imgW)/2,(ph-imgH)/2,imgW,imgH);
-    pdf.save(`KSG-Tag-${currentRef}.pdf`);
-    toast('PDF downloaded!', 'success');
-  }catch(e){ toast('PDF generation failed. Try PNG instead.','error'); }
-}
-
-async function downloadTagPNG(){
-  const el=document.getElementById('id-tag');
-  try{
-    const canvas=await html2canvas(el,{scale:3,backgroundColor:'#ffffff',useCORS:true});
-    const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download=`KSG-Tag-${currentRef}.png`; a.click();
-    toast('PNG downloaded!','success');
-  }catch(e){ toast('PNG export failed.','error'); }
-}
-
+// ─── DOWNLOAD / PRINT (manage modal reprints) ─────────────────────────
 function printTag(){
   window.print();
 }
@@ -1573,16 +1713,16 @@ async function downloadModalPDF(){
   const el=document.getElementById('modal-tag-wrap').querySelector('.id-tag');
   if(!el) return;
   try{
-    const canvas=await html2canvas(el,{scale:3,backgroundColor:'#ffffff'});
+    const canvas=await captureTagElement(el);
     const img=canvas.toDataURL('image/png');
-    const {jsPDF}=window.jspdf;
-    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:[90,56]});
+    const JsPDF=getJsPDF();
+    const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:[90,56]});
     const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
     const imgW=86, imgH=(canvas.height/canvas.width)*imgW;
     pdf.addImage(img,'PNG',(pw-imgW)/2,(ph-imgH)/2,imgW,imgH);
     pdf.save(`KSG-Tag-${STATE.modalTag.reference_number}.pdf`);
     toast('PDF downloaded!','success');
-  }catch(e){ toast('Export failed.','error'); }
+  }catch(e){ toast('Export failed: '+(e.message||'Unknown error'),'error'); }
 }
 
 async function downloadModalPNG(){
@@ -1590,9 +1730,15 @@ async function downloadModalPNG(){
   const el=document.getElementById('modal-tag-wrap').querySelector('.id-tag');
   if(!el) return;
   try{
-    const canvas=await html2canvas(el,{scale:3,backgroundColor:'#ffffff'});
-    const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download=`KSG-Tag-${STATE.modalTag.reference_number}.png`; a.click();
-  }catch(e){}
+    const canvas=await captureTagElement(el);
+    const a=document.createElement('a');
+    a.href=canvas.toDataURL('image/png');
+    a.download=`KSG-Tag-${STATE.modalTag.reference_number}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast('PNG downloaded!','success');
+  }catch(e){ toast('Export failed: '+(e.message||'Unknown error'),'error'); }
 }
 
 function printModal(){ window.print(); }
@@ -1711,6 +1857,7 @@ async function saveEdit(){
   const id=document.getElementById('edit-id').value;
   const t=STATE.tags.find(x=>x.id==id);
   if(!t) return;
+  const oldName = t.full_name;
   t.full_name=document.getElementById('edit-name').value;
   t.department=document.getElementById('edit-dept').value;
   t.position=document.getElementById('edit-pos').value;
@@ -1720,7 +1867,7 @@ async function saveEdit(){
     if(KSGDb.enabled()) await KSGDb.updateTag(t);
     saveLocal();
     refreshTagDataViews();
-    logActivity(`Tag edited: ${t.full_name} (${t.reference_number})`);
+    logActivity(`Tag edited: ${oldName} → ${t.full_name} (${t.reference_number}) - Status: ${t.status}`, 'tag_edited');
     closeModal('modal-edit');
     toast('Tag updated successfully!','success');
   }catch(e){
@@ -1737,7 +1884,7 @@ async function confirmDelete(){
     if(KSGDb.enabled()) await KSGDb.deleteTag(id);
     STATE.tags=STATE.tags.filter(x=>x.id!=id);
     saveLocal(); refreshTagDataViews();
-    if(t) logActivity(`Tag deleted: ${t.full_name} (${t.reference_number})`);
+    if(t) logActivity(`Tag deleted: ${t.full_name} (${t.reference_number}) - Category: ${t.category}`, 'tag_deleted');
     closeModal('modal-delete');
     toast('Tag deleted.','error');
   }catch(e){
@@ -1853,10 +2000,11 @@ function generateBulk(){
           status.textContent=`Done! Generated ${gen} tags.`;
           refreshTagDataViews();
           toast(`${gen} tags generated successfully!`,'success');
-          logActivity(`Bulk generation: ${gen} tags`);
+          logActivity(`Bulk generation: ${gen} tags from CSV/Excel file - Processed: ${total} records`, 'bulk_upload');
         }catch(e){
           status.textContent='Error saving to database.';
           toast('Bulk save failed: '+e.message, 'error');
+          logActivity(`Bulk generation failed: ${e.message} - Attempted: ${gen}/${total} tags`, 'bulk_upload');
         }
       })();
       return;
@@ -1931,26 +2079,162 @@ function renderReports(){
 }
 
 // ─── ACTIVITY LOGS ────────────────────────────
-function logActivity(msg){
+function logActivity(msg, action = 'general'){
   if(!STATE.settings.log) return;
-  const entry = {msg, time:new Date().toISOString(), user:STATE.user?.email||'system'};
+  const entry = {
+    msg, 
+    time: new Date().toISOString(), 
+    user: STATE.user?.email || 'system',
+    action: action,
+    userId: STATE.user?.id,
+  };
   STATE.logs.unshift(entry);
-  if(STATE.logs.length>200) STATE.logs=STATE.logs.slice(0,200);
+  if(STATE.logs.length > 500) STATE.logs = STATE.logs.slice(0, 500);
   saveLocal();
-  if(KSGDb.enabled()) KSGDb.insertLog(msg, STATE.user?.email).catch(e=>console.warn('Log sync:', e.message));
+  if(KSGDb.enabled()) {
+    KSGDb.insertLog(msg, STATE.user?.email, STATE.user?.id, action).catch(e => console.warn('Log sync:', e.message));
+  }
 }
 
 function renderLogs(){
-  const el=document.getElementById('logs-body');
-  if(!STATE.logs.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📝</div><p>No activity logged yet</p></div>'; return; }
-  el.innerHTML=STATE.logs.slice(0,50).map(l=>`<div class="log-item"><div class="log-dot"></div><div><div class="log-text">${l.msg}</div><div class="log-time">${new Date(l.time).toLocaleString()} · ${l.user}</div></div></div>`).join('');
+  const el = document.getElementById('logs-body');
+  const searchTerm = document.getElementById('logs-search')?.value.toLowerCase() || '';
+  
+  // Update stats
+  document.getElementById('log-total').textContent = STATE.logs.length;
+  document.getElementById('log-role').textContent = (STATE.user?.role || 'admin').charAt(0).toUpperCase() + (STATE.user?.role || 'admin').slice(1);
+  
+  const today = new Date().toDateString();
+  const todayLogs = STATE.logs.filter(l => new Date(l.time).toDateString() === today);
+  document.getElementById('log-today').textContent = todayLogs.length;
+  
+  const uniqueUsers = [...new Set(STATE.logs.map(l => l.user))].length;
+  document.getElementById('log-users').textContent = uniqueUsers;
+  
+  // Show/hide clear button based on role
+  const clearBtn = document.getElementById('clear-logs-btn');
+  if(clearBtn){
+    if(STATE.user?.role === 'superadmin'){
+      clearBtn.style.display = 'block';
+      clearBtn.title = 'Clear all activity logs (Superadmin only)';
+    } else {
+      clearBtn.style.display = 'none';
+    }
+  }
+  
+  if(!STATE.logs.length){ 
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📝</div><p>No activity logged yet</p></div>'; 
+    return; 
+  }
+  
+  // Filter based on search
+  let filteredLogs = STATE.logs;
+  if(searchTerm){
+    filteredLogs = STATE.logs.filter(l => 
+      l.msg.toLowerCase().includes(searchTerm) || 
+      l.user.toLowerCase().includes(searchTerm) ||
+      l.action.toLowerCase().includes(searchTerm)
+    );
+  }
+  
+  if(!filteredLogs.length){
+    el.innerHTML = '<div class="empty-state" style="padding: 40px;"><p>No logs matching your search</p></div>';
+    return;
+  }
+  
+  // Display logs with icons based on action type
+  const actionIcons = {
+    'login': '🔓', 'logout': '🔐', 'tag_generated': '🏷️', 'tag_edited': '✏️', 
+    'tag_deleted': '🗑️', 'bulk_upload': '📤', 'settings_changed': '⚙️', 
+    'logs_cleared': '🧹', 'export': '📥', 'general': '📝', 'security_alert': '⚠️'
+  };
+  
+  el.innerHTML = filteredLogs.slice(0, 200).map(l => {
+    const icon = actionIcons[l.action] || '📝';
+    const time = new Date(l.time).toLocaleString();
+    const timeAgo = getTimeAgo(new Date(l.time));
+    return `<div class="log-item"><div class="log-dot" style="background: var(--ksg-gold); font-size: 10px; display: flex; align-items: center; justify-content: center; color: white; text-align: center; padding: 1px;">${icon}</div><div style="flex:1;"><div class="log-text"><strong>${l.action.replace(/_/g, ' ').toUpperCase()}</strong> — ${l.msg}</div><div class="log-time">${time} (${timeAgo}) · ${l.user}</div></div></div>`;
+  }).join('');
 }
 
+function getTimeAgo(date){
+  const seconds = Math.floor((new Date() - date) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + 'y ago';
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + 'mo ago';
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + 'd ago';
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + 'h ago';
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + 'm ago';
+  return Math.floor(seconds) + 's ago';
+}
+
+function exportLogs(){
+  if(!STATE.logs.length){
+    toast('No logs to export.', 'error');
+    return;
+  }
+  
+  const csv = [
+    ['Time', 'User', 'Action', 'Message'].join(','),
+    ...STATE.logs.map(l => [
+      new Date(l.time).toLocaleString(),
+      l.user,
+      l.action,
+      '"' + l.msg.replace(/"/g, '""') + '"'
+    ].join(','))
+  ].join('\n');
+  
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `KSG-Activity-Logs-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  
+  logActivity(`Logs exported (${STATE.logs.length} entries)`, 'export');
+  toast('Logs exported successfully! 📥', 'success');
+}
+
+// Add search listener for logs
+document.addEventListener('DOMContentLoaded', () => {
+  const logsSearch = document.getElementById('logs-search');
+  if(logsSearch){
+    logsSearch.addEventListener('input', () => renderLogs());
+  }
+});
+
 async function clearLogs(){
-  STATE.logs=[];
+  // Only allow superadmin to clear logs
+  if(STATE.user?.role !== 'superadmin'){
+    toast('Only Super Admins can clear activity logs. 🔒', 'error');
+    logActivity(`Unauthorized clear logs attempt by ${STATE.user?.email}`, 'security_alert');
+    return;
+  }
+  
+  if(!confirm('⚠️ This will permanently delete ALL activity logs. This action cannot be undone. Continue?')){
+    return;
+  }
+  
+  STATE.logs = [];
   saveLocal();
-  if(KSGDb.enabled()){ try{ await KSGDb.clearLogs(); }catch(e){ toast('Could not clear remote logs.', 'error'); return; } }
-  renderLogs(); toast('Logs cleared.');
+  if(KSGDb.enabled()){ 
+    try{ 
+      await KSGDb.clearLogs(STATE.user?.role);
+      logActivity('All activity logs cleared by ' + STATE.user?.email, 'logs_cleared');
+    }catch(e){ 
+      toast('Error: ' + e.message, 'error'); 
+      return; 
+    } 
+  }
+  renderLogs(); 
+  toast('All logs have been cleared. ✅', 'success');
 }
 
 // ─── SETTINGS ─────────────────────────────────
@@ -1962,7 +2246,11 @@ async function saveSettings(){
   try{
     if(KSGDb.enabled()) await KSGDb.upsertSettings(STATE.settings);
     saveLocal(); applySettings(); toast('Settings saved!','success');
-  }catch(e){ toast('Failed to save settings: '+e.message, 'error'); }
+    logActivity(`System settings updated: ${STATE.settings.sys}`, 'settings_changed');
+  }catch(e){ 
+    toast('Failed to save settings: '+e.message, 'error'); 
+    logActivity(`Settings save failed: ${e.message}`, 'settings_changed');
+  }
 }
 
 function saveSupabase(){
@@ -2039,8 +2327,14 @@ const sbUrl=localStorage.getItem('ksg_sb_url'); const sbKey=localStorage.getItem
 if(sbUrl) document.getElementById('set-sb-url').value=sbUrl;
 if(sbKey) document.getElementById('set-sb-key').value=sbKey;
 if(KSGSupabase.isConfigured()) KSGSupabase.init(sbUrl, sbKey);
-// Auto-login: Supabase session or local session
+// Mandatory Login: Users must always log in
 (async function bootAuth(){
+  // Force login - no auto-login from stored session
+  // Users must explicitly log in every time
+  STATE.user = null;
+  localStorage.removeItem('ksg_user');
+  
+  // Only auto-login if Supabase session is active
   if(KSGSupabase.isConnected()){
     try{
       const { data: { session } } = await KSGSupabase.getClient().auth.getSession();
@@ -2051,7 +2345,9 @@ if(KSGSupabase.isConfigured()) KSGSupabase.init(sbUrl, sbKey);
       }
     }catch(e){}
   }
-  if(STATE.user) initApp();
+  // Show auth screen - login is required
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
 })();
 // Init bulk gen actions visibility
 document.getElementById('bulk-gen-actions').style.display='none';
