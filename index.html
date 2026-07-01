@@ -7,6 +7,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="supabase-db.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
@@ -1267,12 +1270,34 @@ let STATE = {
 let currentRef = '';
 
 // ─── PERSISTENCE ─────────────────────────────
-function save(){ localStorage.setItem('ksg_tags', JSON.stringify(STATE.tags)); localStorage.setItem('ksg_logs', JSON.stringify(STATE.logs)); localStorage.setItem('ksg_settings', JSON.stringify(STATE.settings)); }
+function saveLocal(){
+  localStorage.setItem('ksg_tags', JSON.stringify(STATE.tags));
+  localStorage.setItem('ksg_logs', JSON.stringify(STATE.logs));
+  localStorage.setItem('ksg_settings', JSON.stringify(STATE.settings));
+}
+function save(){
+  saveLocal();
+  if(KSGDb.enabled()) syncToSupabase().catch(e=>console.warn('Supabase sync:', e.message));
+}
+async function syncToSupabase(){
+  if(!KSGDb.enabled()) return;
+  await KSGDb.upsertSettings(STATE.settings);
+}
+async function loadFromSupabase(){
+  if(!KSGDb.enabled()) return false;
+  const data = await KSGDb.loadAll();
+  STATE.tags = data.tags;
+  STATE.logs = data.logs;
+  if(data.settings) STATE.settings = {...STATE.settings, ...data.settings};
+  saveLocal();
+  return true;
+}
 function load(){
   const t = localStorage.getItem('ksg_tags'); if(t) STATE.tags = JSON.parse(t);
   const l = localStorage.getItem('ksg_logs'); if(l) STATE.logs = JSON.parse(l);
   const s = localStorage.getItem('ksg_settings'); if(s) STATE.settings = {...STATE.settings,...JSON.parse(s)};
   const u = localStorage.getItem('ksg_user'); if(u) STATE.user = JSON.parse(u);
+  if(KSGSupabase.isConfigured()) KSGSupabase.init();
 }
 
 // ─── AUTH ─────────────────────────────────────
@@ -1282,11 +1307,20 @@ function switchAuthTab(tab){
   document.getElementById('form-'+tab).classList.add('active');
 }
 
-function doLogin(){
+async function doLogin(){
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   if(!email||!pass){ showAuthAlert('login','Please enter email and password.','error'); return; }
-  // Simulate auth (replace with Supabase Auth)
+  if(KSGSupabase.isConfigured()){
+    try{
+      const sb = KSGSupabase.init();
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if(error){ showAuthAlert('login', error.message, 'error'); return; }
+      await setUserFromSession(data.user);
+      initApp();
+      return;
+    }catch(e){ showAuthAlert('login', e.message||'Login failed.', 'error'); return; }
+  }
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [{email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'}];
   const user = users.find(u=>u.email===email&&u.pass===pass);
@@ -1296,13 +1330,26 @@ function doLogin(){
   initApp();
 }
 
-function doRegister(){
+async function doRegister(){
   const name=document.getElementById('reg-name').value.trim();
   const email=document.getElementById('reg-email').value.trim();
   const pass=document.getElementById('reg-pass').value;
   const role=document.getElementById('reg-role').value;
   if(!name||!email||!pass){ showAuthAlert('reg','All fields are required.','error'); return; }
   if(pass.length<8){ showAuthAlert('reg','Password must be at least 8 characters.','error'); return; }
+  if(KSGSupabase.isConfigured()){
+    try{
+      const sb = KSGSupabase.init();
+      const { error } = await sb.auth.signUp({
+        email, password: pass,
+        options: { data: { full_name: name, role } }
+      });
+      if(error){ showAuthAlert('reg', error.message, 'error'); return; }
+      showAuthAlert('reg','Account created! Check your email if confirmation is enabled, then sign in.','success');
+      setTimeout(()=>switchAuthTab('login'),2000);
+      return;
+    }catch(e){ showAuthAlert('reg', e.message||'Registration failed.', 'error'); return; }
+  }
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [{email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'}];
   if(users.find(u=>u.email===email)){ showAuthAlert('reg','Email already registered.','error'); return; }
@@ -1312,10 +1359,30 @@ function doRegister(){
   setTimeout(()=>switchAuthTab('login'),1500);
 }
 
-function doReset(){
+async function doReset(){
   const email=document.getElementById('reset-email').value.trim();
   if(!email){ showAuthAlert('reset','Enter your registered email.','error'); return; }
+  if(KSGSupabase.isConfigured()){
+    try{
+      const sb = KSGSupabase.init();
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+      if(error){ showAuthAlert('reset', error.message, 'error'); return; }
+    }catch(e){ showAuthAlert('reset', e.message||'Reset failed.', 'error'); return; }
+  }
   showAuthAlert('reset','If this email is registered, a reset link has been sent.','success');
+}
+
+async function setUserFromSession(authUser){
+  if(!authUser) return;
+  let profile = null;
+  try{ profile = await KSGDb.getProfile(authUser.id); }catch(e){}
+  STATE.user = {
+    id: authUser.id,
+    email: authUser.email,
+    name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email.split('@')[0],
+    role: profile?.role || authUser.user_metadata?.role || 'admin',
+  };
+  localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
 }
 
 function showAuthAlert(form,msg,type){
@@ -1323,7 +1390,10 @@ function showAuthAlert(form,msg,type){
   document.getElementById(id).innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
 }
 
-function doLogout(){
+async function doLogout(){
+  if(KSGSupabase.isConnected()){
+    try{ await KSGSupabase.getClient().auth.signOut(); }catch(e){}
+  }
   STATE.user=null; localStorage.removeItem('ksg_user');
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
@@ -1331,14 +1401,22 @@ function doLogout(){
 }
 
 // ─── APP INIT ─────────────────────────────────
-function initApp(){
+async function initApp(){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('user-name-disp').textContent = STATE.user.name || STATE.user.email.split('@')[0];
   document.getElementById('user-role-disp').textContent = STATE.user.role || 'Admin';
   document.getElementById('user-av').textContent = (STATE.user.name||STATE.user.email)[0].toUpperCase();
+  if(KSGDb.enabled()){
+    try{
+      await loadFromSupabase();
+      toast('Data synced from Supabase ☁️');
+    }catch(e){
+      toast('Could not load from Supabase: '+e.message, 'error');
+    }
+  }
   applySettings();
-  updateDashboard();
+  refreshTagDataViews();
   updateTagPreviewInit();
   logActivity('User logged in: '+STATE.user.email);
   toast('Welcome back, '+(STATE.user.name||'Admin')+'! 👋');
@@ -1420,10 +1498,9 @@ function validateForm(){
 }
 
 // ─── SAVE TAG ─────────────────────────────────
-function saveTag(){
+async function saveTag(){
   if(!validateForm()) return;
   const tag={
-    id: Date.now(),
     reference_number: currentRef,
     full_name: document.getElementById('f-name').value.trim(),
     department: document.getElementById('f-dept').value,
@@ -1434,12 +1511,23 @@ function saveTag(){
     date_generated: new Date().toISOString(),
     created_by: STATE.user.email
   };
-  STATE.tags.unshift(tag);
-  save();
-  updateDashboard();
-  logActivity(`Tag generated: ${tag.full_name} (${tag.reference_number})`);
-  toast(`Tag for ${tag.full_name} saved successfully! ✅`, 'success');
-  updateTagPreviewInit();
+  try{
+    if(KSGDb.enabled()){
+      const saved = await KSGDb.insertTag(tag, STATE.user.email, STATE.user.id);
+      STATE.tags.unshift(saved);
+    } else {
+      tag.id = Date.now();
+      STATE.tags.unshift(tag);
+    }
+    saveLocal();
+    STATE.currentPage = 1;
+    refreshTagDataViews();
+    logActivity(`Tag generated: ${tag.full_name} (${tag.reference_number})`);
+    toast(`Tag for ${tag.full_name} saved successfully! ✅`, 'success');
+    updateTagPreviewInit();
+  }catch(e){
+    toast('Failed to save tag: '+e.message, 'error');
+  }
 }
 
 function clearForm(){
@@ -1512,24 +1600,37 @@ function printModal(){ window.print(); }
 // ─── MANAGE TAGS ──────────────────────────────
 let filteredTags = [];
 
-function filterTags(search){
-  const q = (search||document.querySelector('#page-manage .search-box input').value||'').toLowerCase();
-  const cat = document.getElementById('filter-cat').value;
-  const status = document.getElementById('filter-status').value;
+function applyTagFilters(){
+  const q = (document.querySelector('#page-manage .search-box input')?.value || '').toLowerCase();
+  const cat = document.getElementById('filter-cat')?.value || '';
+  const status = document.getElementById('filter-status')?.value || '';
   filteredTags = STATE.tags.filter(t=>{
     const matchQ = !q || t.full_name.toLowerCase().includes(q) || t.id_number.toLowerCase().includes(q) || (t.department||'').toLowerCase().includes(q) || t.reference_number.toLowerCase().includes(q);
     const matchCat = !cat || t.category===cat;
     const matchStatus = !status || t.status===status;
     return matchQ && matchCat && matchStatus;
   });
+}
+
+function refreshTagDataViews(){
+  updateDashboard();
+  if(document.getElementById('manage-tbody')) renderManageTable();
+  if(document.getElementById('report-stats')) renderReports();
+}
+
+function filterTags(search){
+  if(search !== undefined){
+    const input = document.querySelector('#page-manage .search-box input');
+    if(input) input.value = search;
+  }
   STATE.currentPage=1;
   renderManageTable();
 }
 
 function renderManageTable(){
-  filteredTags = filteredTags.length || !STATE.tags.length ? filteredTags : STATE.tags;
-  if(!filteredTags.length && !document.querySelector('#page-manage .search-box input').value) filteredTags=[...STATE.tags];
+  applyTagFilters();
   const tbody=document.getElementById('manage-tbody');
+  if(!tbody) return;
   document.getElementById('table-count').textContent=`${filteredTags.length} record${filteredTags.length!==1?'s':''}`;
   document.getElementById('nav-tag-count').textContent=STATE.tags.length;
   if(!filteredTags.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>'; renderPagination(0); return; }
@@ -1548,10 +1649,10 @@ function renderManageTable(){
       <td><span class="badge" style="background:${t.status==='Active'?'rgba(46,204,113,0.1)':t.status==='Inactive'?'rgba(243,156,18,0.1)':'rgba(231,76,60,0.1)'};color:${t.status==='Active'?'#1E8449':t.status==='Inactive'?'#B7770D':'#922B21'}">${t.status||'Active'}</span></td>
       <td>
         <div class="action-btns">
-          <button class="btn btn-icon btn-outline btn-sm" onclick="viewTag(${t.id})" title="View">👁️</button>
-          <button class="btn btn-icon btn-outline btn-sm" onclick="editTag(${t.id})" title="Edit">✏️</button>
-          <button class="btn btn-icon btn-outline btn-sm" onclick="reprintTag(${t.id})" title="Reprint">🖨️</button>
-          <button class="btn btn-icon btn-danger btn-sm" onclick="deleteTag(${t.id})" title="Delete">🗑️</button>
+          <button class="btn btn-icon btn-outline btn-sm" onclick="viewTag('${t.id}')" title="View">👁️</button>
+          <button class="btn btn-icon btn-outline btn-sm" onclick="editTag('${t.id}')" title="Edit">✏️</button>
+          <button class="btn btn-icon btn-outline btn-sm" onclick="reprintTag('${t.id}')" title="Reprint">🖨️</button>
+          <button class="btn btn-icon btn-danger btn-sm" onclick="deleteTag('${t.id}')" title="Delete">🗑️</button>
         </div>
       </td>
     </tr>`).join('');
@@ -1570,7 +1671,7 @@ function renderPagination(total){
 function goPage(p){ STATE.currentPage=p; renderManageTable(); }
 
 function viewTag(id){
-  const t=STATE.tags.find(x=>x.id===id);
+  const t=STATE.tags.find(x=>x.id==id);
   if(!t) return;
   STATE.modalTag=t;
   document.getElementById('modal-tag-wrap').innerHTML=buildTagHTML(t);
@@ -1596,7 +1697,7 @@ function buildTagHTML(t){
 }
 
 function editTag(id){
-  const t=STATE.tags.find(x=>x.id===id);
+  const t=STATE.tags.find(x=>x.id==id);
   if(!t) return;
   document.getElementById('edit-id').value=id;
   document.getElementById('edit-name').value=t.full_name;
@@ -1606,31 +1707,42 @@ function editTag(id){
   document.getElementById('modal-edit').classList.add('open');
 }
 
-function saveEdit(){
-  const id=parseInt(document.getElementById('edit-id').value);
-  const t=STATE.tags.find(x=>x.id===id);
+async function saveEdit(){
+  const id=document.getElementById('edit-id').value;
+  const t=STATE.tags.find(x=>x.id==id);
   if(!t) return;
   t.full_name=document.getElementById('edit-name').value;
   t.department=document.getElementById('edit-dept').value;
   t.position=document.getElementById('edit-pos').value;
   t.status=document.getElementById('edit-status').value;
   t.updated_at=new Date().toISOString();
-  save(); renderManageTable();
-  logActivity(`Tag edited: ${t.full_name} (${t.reference_number})`);
-  closeModal('modal-edit');
-  toast('Tag updated successfully!','success');
+  try{
+    if(KSGDb.enabled()) await KSGDb.updateTag(t);
+    saveLocal();
+    refreshTagDataViews();
+    logActivity(`Tag edited: ${t.full_name} (${t.reference_number})`);
+    closeModal('modal-edit');
+    toast('Tag updated successfully!','success');
+  }catch(e){
+    toast('Failed to update tag: '+e.message, 'error');
+  }
 }
 
 function deleteTag(id){ STATE.deleteTarget=id; document.getElementById('modal-delete').classList.add('open'); }
 
-function confirmDelete(){
+async function confirmDelete(){
   const id=STATE.deleteTarget;
-  const t=STATE.tags.find(x=>x.id===id);
-  STATE.tags=STATE.tags.filter(x=>x.id!==id);
-  save(); updateDashboard(); renderManageTable();
-  if(t) logActivity(`Tag deleted: ${t.full_name} (${t.reference_number})`);
-  closeModal('modal-delete');
-  toast('Tag deleted.','error');
+  const t=STATE.tags.find(x=>x.id==id);
+  try{
+    if(KSGDb.enabled()) await KSGDb.deleteTag(id);
+    STATE.tags=STATE.tags.filter(x=>x.id!=id);
+    saveLocal(); refreshTagDataViews();
+    if(t) logActivity(`Tag deleted: ${t.full_name} (${t.reference_number})`);
+    closeModal('modal-delete');
+    toast('Tag deleted.','error');
+  }catch(e){
+    toast('Failed to delete tag: '+e.message, 'error');
+  }
 }
 
 function reprintTag(id){
@@ -1724,15 +1836,41 @@ function generateBulk(){
   const status=document.getElementById('bulk-status');
   let i=0, gen=0;
   const total=STATE.bulkData.length;
+  const batch=[];
   function step(){
-    if(i>=total){ fill.style.width='100%'; status.textContent=`Done! Generated ${gen} tags.`; save(); updateDashboard(); toast(`${gen} tags generated successfully!`,'success'); logActivity(`Bulk generation: ${gen} tags`); return; }
+    if(i>=total){
+      (async ()=>{
+        try{
+          if(KSGDb.enabled() && batch.length){
+            const saved = await KSGDb.insertTags(batch, STATE.user.email, STATE.user.id);
+            STATE.tags.unshift(...saved);
+          } else if(batch.length){
+            STATE.tags.unshift(...batch);
+          }
+          saveLocal();
+          STATE.currentPage = 1;
+          fill.style.width='100%';
+          status.textContent=`Done! Generated ${gen} tags.`;
+          refreshTagDataViews();
+          toast(`${gen} tags generated successfully!`,'success');
+          logActivity(`Bulk generation: ${gen} tags`);
+        }catch(e){
+          status.textContent='Error saving to database.';
+          toast('Bulk save failed: '+e.message, 'error');
+        }
+      })();
+      return;
+    }
     const row=STATE.bulkData[i];
     const n=row.name||row.Name||''; const d=row.department||row.Department||'';
     const p=row.position||row.Position||''; const cat=row.category||row.Category||'';
     const id=row.id_number||row['ID Number']||row.id||'';
     if(n&&d&&cat&&id){
       if(!STATE.settings.dup||!STATE.tags.find(t=>t.id_number===id)){
-        STATE.tags.unshift({id:Date.now()+i,reference_number:genRef(),full_name:n,department:d,position:p,category:cat,id_number:id,status:'Active',date_generated:new Date().toISOString(),created_by:STATE.user.email}); gen++;
+        const tag={reference_number:genRef(),full_name:n,department:d,position:p,category:cat,id_number:id,status:'Active',date_generated:new Date().toISOString(),created_by:STATE.user.email};
+        if(!KSGDb.enabled()) tag.id=Date.now()+i;
+        batch.push(tag);
+        gen++;
       }
     }
     i++; fill.style.width=((i/total)*100)+'%'; status.textContent=`Processing ${i}/${total}…`;
@@ -1795,9 +1933,11 @@ function renderReports(){
 // ─── ACTIVITY LOGS ────────────────────────────
 function logActivity(msg){
   if(!STATE.settings.log) return;
-  STATE.logs.unshift({msg, time:new Date().toISOString(), user:STATE.user?.email||'system'});
+  const entry = {msg, time:new Date().toISOString(), user:STATE.user?.email||'system'};
+  STATE.logs.unshift(entry);
   if(STATE.logs.length>200) STATE.logs=STATE.logs.slice(0,200);
-  save();
+  saveLocal();
+  if(KSGDb.enabled()) KSGDb.insertLog(msg, STATE.user?.email).catch(e=>console.warn('Log sync:', e.message));
 }
 
 function renderLogs(){
@@ -1806,30 +1946,41 @@ function renderLogs(){
   el.innerHTML=STATE.logs.slice(0,50).map(l=>`<div class="log-item"><div class="log-dot"></div><div><div class="log-text">${l.msg}</div><div class="log-time">${new Date(l.time).toLocaleString()} · ${l.user}</div></div></div>`).join('');
 }
 
-function clearLogs(){ STATE.logs=[]; save(); renderLogs(); toast('Logs cleared.'); }
+async function clearLogs(){
+  STATE.logs=[];
+  saveLocal();
+  if(KSGDb.enabled()){ try{ await KSGDb.clearLogs(); }catch(e){ toast('Could not clear remote logs.', 'error'); return; } }
+  renderLogs(); toast('Logs cleared.');
+}
 
 // ─── SETTINGS ─────────────────────────────────
-function saveSettings(){
+async function saveSettings(){
   STATE.settings.org=document.getElementById('set-org').value;
   STATE.settings.sys=document.getElementById('set-sys').value;
   STATE.settings.tagline=document.getElementById('set-tagline').value;
   STATE.settings.gov=document.getElementById('set-gov').value;
-  save(); applySettings(); toast('Settings saved!','success');
+  try{
+    if(KSGDb.enabled()) await KSGDb.upsertSettings(STATE.settings);
+    saveLocal(); applySettings(); toast('Settings saved!','success');
+  }catch(e){ toast('Failed to save settings: '+e.message, 'error'); }
 }
 
 function saveSupabase(){
-  const url=document.getElementById('set-sb-url').value;
-  const key=document.getElementById('set-sb-key').value;
+  const url=document.getElementById('set-sb-url').value.trim();
+  const key=document.getElementById('set-sb-key').value.trim();
   localStorage.setItem('ksg_sb_url',url); localStorage.setItem('ksg_sb_key',key);
+  KSGSupabase.init(url, key);
   toast('Supabase config saved!','success');
 }
 
-function testSupabase(){
-  const url=document.getElementById('set-sb-url').value;
-  if(!url){ toast('Enter Supabase URL first.','error'); return; }
-  fetch(url+'/rest/v1/',{headers:{'apikey':document.getElementById('set-sb-key').value}})
-    .then(r=>r.ok?toast('Supabase connected! ✅','success'):toast('Connection failed. Check your credentials.','error'))
-    .catch(()=>toast('Cannot reach Supabase. Check URL.','error'));
+async function testSupabase(){
+  const url=document.getElementById('set-sb-url').value.trim();
+  const key=document.getElementById('set-sb-key').value.trim();
+  if(!url||!key){ toast('Enter Supabase URL and anon key.','error'); return; }
+  KSGSupabase.init(url, key);
+  const result = await KSGDb.testConnection();
+  if(result.ok) toast('Supabase connected! ✅','success');
+  else toast('Connection failed: '+result.message,'error');
 }
 
 function applySettings(){
@@ -1842,18 +1993,22 @@ function applySettings(){
   ['dark','qr','email','dup','log'].forEach(k=>{ const el=document.getElementById('tgl-'+k); if(el) el.classList.toggle('on',!!STATE.settings[k]); });
 }
 
-function toggleSetting(el,key){ el.classList.toggle('on'); STATE.settings[key]=el.classList.contains('on'); save(); }
+function toggleSetting(el,key){ el.classList.toggle('on'); STATE.settings[key]=el.classList.contains('on'); saveLocal(); if(KSGDb.enabled()) KSGDb.upsertSettings(STATE.settings).catch(()=>{}); }
 
 function toggleDark(){
-  STATE.settings.darkMode=!STATE.settings.darkMode; save();
+  STATE.settings.darkMode=!STATE.settings.darkMode; saveLocal();
+  if(KSGDb.enabled()) KSGDb.upsertSettings(STATE.settings).catch(()=>{});
   document.body.style.background=STATE.settings.darkMode?'#0d1b2a':'';
   toast(STATE.settings.darkMode?'Dark mode on 🌙':'Light mode on ☀️');
 }
 
-function clearAllData(){
+async function clearAllData(){
   if(!confirm('Delete ALL tags? This cannot be undone.')) return;
-  STATE.tags=[]; save(); updateDashboard(); renderManageTable();
-  toast('All data cleared.','error'); logActivity('All data cleared by admin');
+  try{
+    if(KSGDb.enabled()) await KSGDb.deleteAllTags();
+    STATE.tags=[]; saveLocal(); refreshTagDataViews();
+    toast('All data cleared.','error'); logActivity('All data cleared by admin');
+  }catch(e){ toast('Failed to clear data: '+e.message, 'error'); }
 }
 
 // ─── GLOBAL SEARCH ────────────────────────────
@@ -1879,12 +2034,25 @@ function toast(msg,type=''){
 load();
 // Init preview date
 document.getElementById('pt-date').textContent=new Date().toLocaleDateString('en-GB');
-// Auto-login if session exists
-if(STATE.user){ initApp(); }
-// Restore Supabase fields
+// Restore Supabase fields & init client
 const sbUrl=localStorage.getItem('ksg_sb_url'); const sbKey=localStorage.getItem('ksg_sb_key');
 if(sbUrl) document.getElementById('set-sb-url').value=sbUrl;
 if(sbKey) document.getElementById('set-sb-key').value=sbKey;
+if(KSGSupabase.isConfigured()) KSGSupabase.init(sbUrl, sbKey);
+// Auto-login: Supabase session or local session
+(async function bootAuth(){
+  if(KSGSupabase.isConnected()){
+    try{
+      const { data: { session } } = await KSGSupabase.getClient().auth.getSession();
+      if(session?.user){
+        await setUserFromSession(session.user);
+        initApp();
+        return;
+      }
+    }catch(e){}
+  }
+  if(STATE.user) initApp();
+})();
 // Init bulk gen actions visibility
 document.getElementById('bulk-gen-actions').style.display='none';
 // Restore dark mode
