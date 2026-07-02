@@ -533,8 +533,8 @@
   .modal-overlay.open { display: flex; }
   .modal {
     background: white; border-radius: 16px;
-    box-shadow: var(--shadow-lg); width: 520px; max-width: 94vw;
-    max-height: 90vh; overflow-y: auto;
+    box-shadow: var(--shadow-lg); width: min(980px, 96vw);
+    max-width: 96vw; max-height: 92vh; overflow-y: auto;
     animation: modalIn 0.2s ease;
   }
   @keyframes modalIn { from { opacity:0; transform: scale(0.94) translateY(10px); } }
@@ -542,6 +542,30 @@
   .modal-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; }
   .modal-close { background: none; border: none; cursor: pointer; font-size: 1.2rem; color: var(--ksg-gray); }
   .modal-body { padding: 24px 26px; }
+  .modal-body--split {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 24px;
+    align-items: start;
+  }
+  .modal-preview-shell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0;
+  }
+  .modal-preview-shell .id-tag {
+    width: min(100%, 520px);
+    height: auto;
+    aspect-ratio: 526 / 325;
+    transform: scale(1.05);
+    transform-origin: center;
+  }
+  .modal-form-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
   .modal-footer { padding: 16px 26px; border-top: 1px solid var(--ksg-light); display: flex; gap: 10px; justify-content: flex-end; }
 
   /* ─── TOAST ─── */
@@ -942,7 +966,7 @@
                   </select>
                 </div>
                 <div class="form-actions">
-                  <button class="btn btn-gold" onclick="generateTagWord()">📝 Generate Word</button>
+                  <button class="btn btn-gold" onclick="generateTagPDF()">📄 Generate PDF</button>
                   <button class="btn btn-dark" onclick="generateTagPNG()">🖼️ Generate PNG</button>
                   <button class="btn btn-outline" onclick="clearForm()">✕ Clear</button>
                 </div>
@@ -1014,7 +1038,7 @@
                   </div>
                 </div>
                 <div class="preview-actions">
-                  <button class="btn btn-gold btn-sm" onclick="generateTagWord()">📝 Generate Word</button>
+                  <button class="btn btn-gold btn-sm" onclick="generateTagPDF()">📄 Generate PDF</button>
                   <button class="btn btn-dark btn-sm" onclick="generateTagPNG()">🖼️ Generate PNG</button>
                 </div>
               </div>
@@ -1276,12 +1300,16 @@
       <span class="modal-title">Tag Preview</span>
       <button class="modal-close" onclick="closeModal('modal-view')">✕</button>
     </div>
-    <div class="modal-body modal-body--centered">
-      <div id="modal-tag-wrap"></div>
-      <div class="modal-actions--centered">
-        <button class="btn btn-gold btn-sm" onclick="downloadModalPDF()">📄 PDF</button>
-        <button class="btn btn-dark btn-sm" onclick="downloadModalPNG()">🖼️ PNG</button>
-        <button class="btn btn-outline btn-sm" onclick="printModal()">🖨️ Print</button>
+    <div class="modal-body modal-body--split">
+      <div class="modal-preview-shell">
+        <div id="modal-tag-wrap"></div>
+      </div>
+      <div class="modal-form-stack">
+        <div class="modal-actions--centered">
+          <button class="btn btn-gold btn-sm" onclick="downloadModalPDF()">📄 PDF</button>
+          <button class="btn btn-dark btn-sm" onclick="downloadModalPNG()">🖼️ PNG</button>
+          <button class="btn btn-outline btn-sm" onclick="printModal()">🖨️ Print</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1729,80 +1757,38 @@ async function getTemplateDataUrl(){
   }
 }
 
-async function generateTagWord(){
+async function generateTagPDF(){
   if(!validateForm()) return;
   const ref = currentRef;
-  const data = getTagFormData();
+  const el = document.getElementById('id-tag');
+  if(!el){ toast('Tag preview not found.', 'error'); return; }
   try{
-    const templateDataUrl = await getTemplateDataUrl();
-    const preview = document.getElementById('id-tag');
-    const fields = ['pt-orgname','pt-name','pt-position','pt-dept','pt-ref','pt-date'];
-    const renderStyles = {};
-    fields.forEach((id) => {
-      const el = document.getElementById(id);
-      if(!el) return;
-      const cs = getComputedStyle(el);
-      renderStyles[id] = {
-        text: (el.textContent || '').trim(),
-        top: cs.top || '0px',
-        left: cs.left || '0px',
-        fontFamily: cs.fontFamily || 'Arial',
-        fontSize: cs.fontSize || '16px',
-        fontWeight: cs.fontWeight || '400',
-        letterSpacing: cs.letterSpacing || '0px',
-        color: cs.color || '#000000',
-        textTransform: cs.textTransform || 'none',
-        whiteSpace: cs.whiteSpace || 'nowrap',
-      };
-    });
-
-    const content = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>KSG Tag ${ref}</title>
-    <style>
-      body { margin:0; padding:24px; font-family: Arial, sans-serif; background:#f5f5f5; }
-      .doc-page { width: 526px; height: 325px; margin: 0 auto; position: relative; overflow: hidden; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.14); }
-      .doc-page .tag-bg { position:absolute; inset:0; width:100%; height:100%; background-repeat:no-repeat; background-size:100% 100%; background-position:center; ${templateDataUrl ? `background-image:url('${templateDataUrl}');` : ''} }
-      .doc-text { position:absolute; z-index:2; line-height:1.1; display:block; }
-    </style>
-  </head>
-  <body>
-    <div class="doc-page">
-      <div class="tag-bg"></div>
-      <div class="doc-text" style="top:${renderStyles['pt-orgname'].top}; left:${renderStyles['pt-orgname'].left}; font-family:${renderStyles['pt-orgname'].fontFamily}; font-size:${renderStyles['pt-orgname'].fontSize}; font-weight:${renderStyles['pt-orgname'].fontWeight}; letter-spacing:${renderStyles['pt-orgname'].letterSpacing}; color:${renderStyles['pt-orgname'].color}; text-transform:${renderStyles['pt-orgname'].textTransform}; white-space:${renderStyles['pt-orgname'].whiteSpace};">${renderStyles['pt-orgname'].text}</div>
-      <div class="doc-text" style="top:${renderStyles['pt-name'].top}; left:${renderStyles['pt-name'].left}; font-family:${renderStyles['pt-name'].fontFamily}; font-size:${renderStyles['pt-name'].fontSize}; font-weight:${renderStyles['pt-name'].fontWeight}; letter-spacing:${renderStyles['pt-name'].letterSpacing}; color:${renderStyles['pt-name'].color}; text-transform:${renderStyles['pt-name'].textTransform}; white-space:${renderStyles['pt-name'].whiteSpace};">${renderStyles['pt-name'].text}</div>
-      <div class="doc-text" style="top:${renderStyles['pt-position'].top}; left:${renderStyles['pt-position'].left}; font-family:${renderStyles['pt-position'].fontFamily}; font-size:${renderStyles['pt-position'].fontSize}; font-weight:${renderStyles['pt-position'].fontWeight}; letter-spacing:${renderStyles['pt-position'].letterSpacing}; color:${renderStyles['pt-position'].color}; text-transform:${renderStyles['pt-position'].textTransform}; white-space:${renderStyles['pt-position'].whiteSpace};">${renderStyles['pt-position'].text}</div>
-      <div class="doc-text" style="top:${renderStyles['pt-dept'].top}; left:${renderStyles['pt-dept'].left}; font-family:${renderStyles['pt-dept'].fontFamily}; font-size:${renderStyles['pt-dept'].fontSize}; font-weight:${renderStyles['pt-dept'].fontWeight}; letter-spacing:${renderStyles['pt-dept'].letterSpacing}; color:${renderStyles['pt-dept'].color}; text-transform:${renderStyles['pt-dept'].textTransform}; white-space:${renderStyles['pt-dept'].whiteSpace};">${renderStyles['pt-dept'].text}</div>
-      <div class="doc-text" style="top:${renderStyles['pt-ref'].top}; left:${renderStyles['pt-ref'].left}; font-family:${renderStyles['pt-ref'].fontFamily}; font-size:${renderStyles['pt-ref'].fontSize}; font-weight:${renderStyles['pt-ref'].fontWeight}; letter-spacing:${renderStyles['pt-ref'].letterSpacing}; color:${renderStyles['pt-ref'].color}; text-transform:${renderStyles['pt-ref'].textTransform}; white-space:${renderStyles['pt-ref'].whiteSpace};">${renderStyles['pt-ref'].text}</div>
-      <div class="doc-text" style="top:${renderStyles['pt-date'].top}; left:${renderStyles['pt-date'].left}; font-family:${renderStyles['pt-date'].fontFamily}; font-size:${renderStyles['pt-date'].fontSize}; font-weight:${renderStyles['pt-date'].fontWeight}; letter-spacing:${renderStyles['pt-date'].letterSpacing}; color:${renderStyles['pt-date'].color}; text-transform:${renderStyles['pt-date'].textTransform}; white-space:${renderStyles['pt-date'].whiteSpace};">${renderStyles['pt-date'].text}</div>
-    </div>
-  </body>
-</html>`;
-
-    const blob = new Blob([content], { type: 'application/msword;charset=utf-8' });
-    const a = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    a.href = url;
-    a.download = `KSG-Tag-${ref}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    const canvas = await exportTagCanvas(el);
+    const JsPDF = getJsPDF();
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const imgW = 86;
+    const imgH = (canvas.height / canvas.width) * imgW;
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pw - imgW) / 2, (ph - imgH) / 2, imgW, imgH);
+    pdf.save(`KSG-Tag-${ref}.pdf`);
 
     try{
       const saved = await persistCurrentTag();
       updateTagPreviewInit();
       updatePreview();
-      toast(`Word document generated for ${saved.name}. Updated in Manage Tags & Reports.`, 'success');
+      toast(`PDF generated for ${saved.name}. Updated in Manage Tags & Reports.`, 'success');
     }catch(e){
-      toast('Word document downloaded but tag could not be saved: ' + e.message, 'error');
+      toast('PDF downloaded but tag could not be saved: ' + e.message, 'error');
     }
   }catch(e){
-    toast('Word generation failed: ' + (e.message || 'Unknown error'), 'error');
+    toast('PDF generation failed: ' + (e.message || 'Unknown error'), 'error');
     console.error(e);
   }
+}
+
+async function generateTagWord(){
+  return generateTagPDF();
 }
 
 async function generateTagPNG(){
