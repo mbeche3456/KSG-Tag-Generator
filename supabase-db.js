@@ -73,8 +73,7 @@ window.KSGDb = (function () {
   }
 
   function tagToRow(tag, userEmail, userId) {
-    return {
-      id: tag.id || undefined,
+    const row = {
       reference_number: tag.reference_number,
       full_name: tag.full_name,
       department: tag.department,
@@ -87,6 +86,12 @@ window.KSGDb = (function () {
       created_by: userId || null,
       created_by_email: tag.created_by || userEmail,
     };
+
+    if (tag.id) {
+      row.id = tag.id;
+    }
+
+    return row;
   }
 
   async function loadAll() {

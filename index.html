@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.1/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-db.js"></script>
@@ -69,6 +70,7 @@
   }
   .auth-card {
     background: rgba(255,255,255,0.06);
+    -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
     border: 1px solid rgba(201,168,76,0.25);
     border-radius: 20px;
@@ -271,6 +273,48 @@
   }
   .card-title { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--ksg-dark); }
   .card-body { padding: 20px 24px; }
+  .card-body--flush { padding: 0; }
+  .card-title--small { font-size: 0.88rem; margin-bottom: 12px; }
+  .text-muted-light { color: rgba(255,255,255,0.5); font-size: 0.8rem; }
+  .field-hidden { display: none; }
+  .style-panel { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--ksg-light); }
+  .style-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .style-panel-title { margin: 0; }
+  .style-panel-select { padding: 6px 8px; font-size: 0.78rem; }
+  .style-panel-select--compact { width: auto; }
+  .style-panel-select--full { width: 100%; }
+  .style-panel-controls { display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 0.72rem; }
+  .style-panel-row { display: flex; justify-content: space-between; }
+  .style-panel-range { width: 100%; }
+  .style-panel-inline { display: flex; align-items: center; gap: 14px; padding-top: 4px; }
+  .style-panel-check { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 0.75rem; text-transform: none; letter-spacing: 0; font-weight: 500; }
+  .style-panel-color { width: 40px; height: 28px; padding: 0; border-radius: 6px; }
+  .style-panel-help { font-size: 0.7rem; color: var(--ksg-gray); padding-top: 2px; }
+  .manage-search--wide { max-width: 320px; }
+  .empty-link { color: var(--ksg-gold); cursor: pointer; }
+  .bulk-code { font-size: 0.8rem; color: var(--ksg-gray); font-family: 'DM Mono', monospace; }
+  .bulk-status { margin-top: 12px; font-size: 0.85rem; color: var(--ksg-gray); }
+  .bulk-inline { margin-top: 16px; }
+  .bulk-actions-row { padding: 16px; border-top: 1px solid var(--ksg-light); display: flex; gap: 10px; }
+  .page-header-actions { display: flex; gap: 8px; }
+  .settings-note { margin-top: 12px; font-size: 0.8rem; color: var(--ksg-gray); }
+  .settings-action-btn { margin-bottom: 8px; display: block; width: 100%; }
+  .stats-grid--compact { margin-bottom: 24px; }
+  .logs-toolbar { display: flex; gap: 8px; align-items: center; }
+  .logs-search { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--ksg-light); width: 200px; font-size: 0.85rem; }
+  .modal--wide { width: 700px; }
+  .modal-body--centered { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .modal-actions--centered { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .modal--dark { background: #1a1a1a; color: #f0f0f0; }
+  .modal-header--dark { border-bottom-color: #333; color: #f0f0f0; }
+  .modal-close--dark { color: #999; }
+  .modal-form-group { margin-bottom: 16px; }
+  .modal-form-label--dark { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; color: #f0f0f0; }
+  .modal-form-input--dark { width: 100%; padding: 10px 13px; border: 1.5px solid #444; border-radius: 8px; font-size: 0.9rem; outline: none; font-family: 'DM Sans', sans-serif; background: #2a2a2a; color: #f0f0f0; }
+  .modal-footer--dark { border-top-color: #333; }
+  .modal-copy { font-size: 0.9rem; color: var(--ksg-gray); }
+  .modal--compact { width: 400px; }
+  .hidden { display: none !important; }
 
   /* ─── QUICK ACTIONS ─── */
   .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -392,7 +436,6 @@
   .id-tag .tag-category-badge {
     display: none;
   }
-  .cat-staff,.cat-intern,.cat-visitor,.cat-attachee,.cat-student,.cat-trainer{}
   .id-tag .tag-meta-strip {
     display: none;
   }
@@ -484,6 +527,7 @@
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(10,22,40,0.6);
     z-index: 999; display: none; align-items: center; justify-content: center;
+    -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
   }
   .modal-overlay.open { display: flex; }
@@ -806,7 +850,7 @@
                 <span class="card-title">Recently Generated Tags</span>
                 <button class="btn btn-sm btn-outline" onclick="gotoPage('manage',document.querySelectorAll('.nav-item')[2])">View All</button>
               </div>
-              <div class="card-body" style="padding:0">
+              <div class="card-body card-body--flush">
                 <table class="data-table">
                   <thead><tr><th>Name</th><th>Category</th><th>Department</th><th>Date</th></tr></thead>
                   <tbody id="recent-tags-body">
@@ -827,7 +871,7 @@
                   <button class="qa-btn" onclick="gotoPage('settings',document.querySelectorAll('.nav-item')[5])"><span class="qa-icon">⚙️</span>Settings</button>
                 </div>
                 <div class="divider"></div>
-                <div class="card-title" style="font-size:0.88rem;margin-bottom:12px;">Category Breakdown</div>
+                <div class="card-title card-title--small">Category Breakdown</div>
                 <div class="chart-bar-wrap" id="dash-category-chart"></div>
               </div>
             </div>
@@ -844,7 +888,7 @@
             <div class="form-card card">
               <div class="card-header">
                 <span class="card-title">Tag Information</span>
-                <span style="color:rgba(255,255,255,0.5);font-size:0.8rem">All fields required</span>
+                <span class="text-muted-light">All fields required</span>
               </div>
               <div class="gen-form">
                 <div class="form-row">
@@ -854,7 +898,7 @@
                     <div class="field-error" id="err-name"></div>
                   </div>
                   <input type="hidden" id="f-idnum" value="">
-                  <div class="field-error" id="err-idnum" style="display:none"></div>
+                  <div class="field-error field-hidden" id="err-idnum"></div>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
@@ -875,7 +919,7 @@
                     <div class="field-error" id="err-dept"></div>
                   </div>
                   <input type="hidden" id="f-position" value="">
-                  <div class="field-error" id="err-position" style="display:none"></div>
+                  <div class="field-error field-hidden" id="err-position"></div>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
@@ -891,7 +935,7 @@
                     </select>
                     <div class="field-error" id="err-cat"></div>
                   </div>
-                  <select id="f-status" style="display:none">
+                  <select id="f-status" class="field-hidden">
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="Expired">Expired</option>
@@ -904,42 +948,42 @@
                 </div>
 
                 <!-- ─── Per-field text styling ─── -->
-                <div class="style-panel" style="margin-top:18px;padding-top:14px;border-top:1px solid var(--ksg-light);">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                    <label style="margin:0;">Edit Text Styling</label>
-                    <select id="sp-target" style="width:auto;padding:6px 8px;font-size:0.78rem;">
+                <div class="style-panel">
+                  <div class="style-panel-header">
+                    <label class="style-panel-title">Edit Text Styling</label>
+                    <select id="sp-target" class="style-panel-select style-panel-select--compact">
                       <option value="pt-name">Full Name</option>
                       <option value="pt-dept">Department</option>
                       <option value="pt-position">Category</option>
                       <option value="pt-orgname">Institution</option>
                     </select>
                   </div>
-                  <div style="display:grid;grid-template-columns:1fr;gap:8px;font-size:0.72rem;">
-                    <div><div style="font-weight:600;letter-spacing:.5px;">FONT FAMILY</div>
-                      <select id="sp-ff" style="width:100%;padding:6px 8px;font-size:0.78rem;">
+                  <div class="style-panel-controls">
+                    <div><div class="style-panel-heading">FONT FAMILY</div>
+                      <select id="sp-ff" class="style-panel-select style-panel-select--full">
                         <option>Arial</option><option>Helvetica</option><option>Times New Roman</option>
                         <option>Georgia</option><option>Courier New</option><option>Verdana</option>
                         <option>Tahoma</option><option>Trebuchet MS</option>
                       </select></div>
-                    <div><div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">FONT SIZE</span><span id="sp-size-v">24px</span></div>
-                      <input type="range" id="sp-size" min="8" max="80" value="24" style="width:100%;"></div>
-                    <div><div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">WEIGHT</span><span id="sp-w-v">700</span></div>
-                      <input type="range" id="sp-w" min="100" max="900" step="100" value="700" style="width:100%;"></div>
-                    <div><div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">LETTER SPACING</span><span id="sp-ls-v">0.5px</span></div>
-                      <input type="range" id="sp-ls" min="-2" max="10" step="0.1" value="0.5" style="width:100%;"></div>
-                    <div><div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">TOP</span><span id="sp-top-v">183px</span></div>
-                      <input type="range" id="sp-top" min="0" max="325" value="183" style="width:100%;"></div>
-                    <div><div style="display:flex;justify-content:space-between;"><span style="font-weight:600;">LEFT</span><span id="sp-left-v">257px</span></div>
-                      <input type="range" id="sp-left" min="0" max="526" value="257" style="width:100%;"></div>
-                    <div style="display:flex;align-items:center;gap:14px;padding-top:4px;">
-                      <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:0.75rem;text-transform:none;letter-spacing:0;font-weight:500;">
-                        <input type="checkbox" id="sp-bg" style="width:auto;"> White backdrop
+                    <div><div class="style-panel-row"><span style="font-weight:600;">FONT SIZE</span><span id="sp-size-v">24px</span></div>
+                      <input type="range" id="sp-size" min="8" max="80" value="24" class="style-panel-range"></div>
+                    <div><div class="style-panel-row"><span style="font-weight:600;">WEIGHT</span><span id="sp-w-v">700</span></div>
+                      <input type="range" id="sp-w" min="100" max="900" step="100" value="700" class="style-panel-range"></div>
+                    <div><div class="style-panel-row"><span style="font-weight:600;">LETTER SPACING</span><span id="sp-ls-v">0.5px</span></div>
+                      <input type="range" id="sp-ls" min="-2" max="10" step="0.1" value="0.5" class="style-panel-range"></div>
+                    <div><div class="style-panel-row"><span style="font-weight:600;">TOP</span><span id="sp-top-v">183px</span></div>
+                      <input type="range" id="sp-top" min="0" max="325" value="183" class="style-panel-range"></div>
+                    <div><div class="style-panel-row"><span style="font-weight:600;">LEFT</span><span id="sp-left-v">257px</span></div>
+                      <input type="range" id="sp-left" min="0" max="526" value="257" class="style-panel-range"></div>
+                    <div class="style-panel-inline">
+                      <label class="style-panel-check">
+                        <input type="checkbox" id="sp-bg" class="style-panel-checkbox"> White backdrop
                       </label>
-                      <label style="display:flex;align-items:center;gap:6px;margin:0;font-size:0.75rem;text-transform:none;letter-spacing:0;font-weight:500;">
-                        Color <input type="color" id="sp-color" value="#000000" style="width:40px;height:28px;padding:0;border-radius:6px;">
+                      <label class="style-panel-check">
+                        Color <input type="color" id="sp-color" value="#000000" class="style-panel-color">
                       </label>
                     </div>
-                    <div style="font-size:0.7rem;color:var(--ksg-gray);padding-top:2px;">Tip: drag text directly on the preview.</div>
+                    <div class="style-panel-help">Tip: drag text directly on the preview.</div>
                   </div>
                 </div>
               </div>
@@ -985,7 +1029,7 @@
             <p>View, search, edit, and manage all generated identification tags</p>
           </div>
           <div class="manage-header">
-            <div class="search-box" style="max-width:320px">
+            <div class="search-box manage-search--wide">
               <span>🔍</span>
               <input type="text" placeholder="Search by name, ID, department…" oninput="filterTags(this.value)">
             </div>
@@ -998,6 +1042,7 @@
               <option value="">All Status</option>
               <option>Active</option><option>Inactive</option><option>Expired</option>
             </select>
+            <button class="btn btn-outline btn-sm" id="bulk-download-btn" onclick="downloadSelectedTags()" disabled>📥 Download Selected</button>
             <button class="btn btn-gold btn-sm" onclick="exportAll()">📥 Export CSV</button>
             <button class="btn btn-dark btn-sm" onclick="exportPDFReport()">📄 PDF Report</button>
           </div>
@@ -1010,13 +1055,14 @@
               <table class="data-table" id="manage-table">
                 <thead>
                   <tr>
+                    <th><input type="checkbox" id="select-all-visible" onchange="toggleSelectVisible(this.checked)"></th>
                     <th>#</th><th>Ref No.</th><th>Full Name</th><th>Department</th>
                     <th>Position</th><th>Category</th><th>ID Number</th>
                     <th>Date</th><th>Status</th><th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="manage-tbody">
-                  <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found. <a style="color:var(--ksg-gold);cursor:pointer" onclick="gotoPage('generate',document.querySelectorAll('.nav-item')[1])">Generate your first tag →</a></p></div></td></tr>
+                  <tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found. <a class="empty-link" onclick="gotoPage('generate',document.querySelectorAll('.nav-item')[1])">Generate your first tag →</a></p></div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -1039,17 +1085,17 @@
                   <div class="drop-title">Drop your file here</div>
                   <div class="drop-hint">Supports CSV or Excel (.xlsx) · Click to browse</div>
                 </div>
-                <input type="file" id="bulk-file" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
+                <input type="file" id="bulk-file" accept=".csv,.xlsx,.xls,.xlsm" class="field-hidden" onchange="handleFileUpload(event)">
                 <div class="divider"></div>
-                <div class="card-title" style="font-size:0.88rem;margin-bottom:10px">Required CSV Columns:</div>
-                <code style="font-size:0.8rem;color:var(--ksg-gray);font-family:'DM Mono',monospace">name, department, position, category, id_number</code>
+                <div class="card-title card-title--small">Required Columns:</div>
+                <code class="bulk-code">full_name, department, category</code>
                 <br><br>
                 <button class="btn btn-outline btn-sm" onclick="downloadTemplate()">📥 Download Template</button>
-                <div id="bulk-progress" style="display:none">
-                  <div style="margin-top:12px;font-size:0.85rem;color:var(--ksg-gray)" id="bulk-status">Processing…</div>
-                  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+                <div id="bulk-progress" class="hidden">
+                  <div class="bulk-status" id="bulk-status">Processing…</div>
+                  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
                 </div>
-                <div style="margin-top:16px" id="bulk-actions" style="display:none"></div>
+                <div id="bulk-actions" class="bulk-inline hidden"></div>
               </div>
             </div>
             <div class="card">
@@ -1059,13 +1105,13 @@
               </div>
               <div class="bulk-preview-table">
                 <table class="data-table" id="bulk-preview-table">
-                  <thead><tr><th>Name</th><th>Dept</th><th>Category</th><th>ID No.</th><th>Status</th></tr></thead>
+                  <thead><tr><th>Name</th><th>Dept</th><th>Category</th></tr></thead>
                   <tbody id="bulk-preview-body">
                     <tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📤</div><p>Upload a file to preview data</p></div></td></tr>
                   </tbody>
                 </table>
               </div>
-              <div style="padding:16px;border-top:1px solid var(--ksg-light);display:flex;gap:10px" id="bulk-gen-actions" style="display:none">
+              <div class="bulk-actions-row hidden" id="bulk-gen-actions">
                 <button class="btn btn-gold" id="btn-bulk-gen" onclick="generateBulk()" disabled>⚡ Generate All Tags</button>
                 <button class="btn btn-outline" onclick="clearBulk()">✕ Clear</button>
               </div>
@@ -1096,7 +1142,7 @@
           <div class="card">
             <div class="card-header">
               <span class="card-title">Summary Statistics</span>
-              <div style="display:flex;gap:8px">
+              <div class="page-header-actions">
                 <button class="btn btn-gold btn-sm" onclick="exportAll()">📥 Export CSV</button>
                 <button class="btn btn-dark btn-sm" onclick="exportPDFReport()">📄 PDF</button>
               </div>
@@ -1149,7 +1195,7 @@
                 </div>
                 <button class="btn btn-gold btn-sm" onclick="testSupabase()">🔗 Test Connection</button>
                 <button class="btn btn-dark btn-sm" onclick="saveSupabase()">💾 Save</button>
-                <div style="margin-top:12px;font-size:0.8rem;color:var(--ksg-gray)">
+                <div class="settings-note">
                   🔒 Keys are stored locally in your browser. Never share them.
                 </div>
               </div>
@@ -1167,10 +1213,10 @@
             <div class="settings-card card">
               <div class="card-header"><span class="card-title">Data Management</span></div>
               <div class="settings-form">
-                <p style="font-size:0.85rem;color:var(--ksg-gray);margin-bottom:16px">Manage your locally stored tag data.</p>
-                <button class="btn btn-outline btn-sm" onclick="exportAll()" style="margin-bottom:8px;display:block;width:100%">📥 Export All Tags (CSV)</button>
-                <button class="btn btn-outline btn-sm" onclick="exportPDFReport()" style="margin-bottom:8px;display:block;width:100%">📄 Export PDF Report</button>
-                <button class="btn btn-danger btn-sm" onclick="clearAllData()" style="display:block;width:100%">🗑️ Clear All Data</button>
+                <p class="settings-copy">Manage your locally stored tag data.</p>
+                <button class="btn btn-outline btn-sm settings-action-btn" onclick="exportAll()">📥 Export All Tags (CSV)</button>
+                <button class="btn btn-outline btn-sm settings-action-btn" onclick="exportPDFReport()">📄 Export PDF Report</button>
+                <button class="btn btn-danger btn-sm settings-action-btn" onclick="clearAllData()">🗑️ Clear All Data</button>
               </div>
             </div>
           </div>
@@ -1182,7 +1228,7 @@
             <h2>Activity Logs</h2>
             <p>Full audit trail of all system actions and events</p>
           </div>
-          <div class="stats-grid" style="margin-bottom: 24px;">
+          <div class="stats-grid stats-grid--compact">
             <div class="stat-card gold">
               <div class="stat-icon">📝</div>
               <div class="stat-value" id="log-total">0</div>
@@ -1198,7 +1244,7 @@
               <div class="stat-value" id="log-today">0</div>
               <div class="stat-label">Today's Events</div>
             </div>
-            <div class="stat-card" style="background: linear-gradient(135deg, #E74C3C 0%, #C0392B 100%);">
+            <div class="stat-card stat-card--danger">
               <div class="stat-icon">🔐</div>
               <div class="stat-value" id="log-role">—</div>
               <div class="stat-label">Your Role</div>
@@ -1207,10 +1253,10 @@
           <div class="card">
             <div class="card-header">
               <span class="card-title">System Activity</span>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="logs-search" placeholder="Search logs..." style="padding: 8px 12px; border-radius: 6px; border: 1px solid var(--ksg-light); width: 200px; font-size: 0.85rem;">
+              <div class="logs-toolbar">
+                <input type="text" id="logs-search" class="logs-search" placeholder="Search logs...">
                 <button class="btn btn-dark btn-sm" onclick="exportLogs()">📥 Export</button>
-                <button class="btn btn-outline btn-sm" id="clear-logs-btn" onclick="clearLogs()" style="display: none;">🗑️ Clear Logs</button>
+                <button class="btn btn-outline btn-sm hidden" id="clear-logs-btn" onclick="clearLogs()">🗑️ Clear Logs</button>
               </div>
             </div>
             <div class="card-body" id="logs-body">
@@ -1226,14 +1272,14 @@
 
 <!-- ── MODAL: VIEW TAG ── -->
 <div class="modal-overlay" id="modal-view">
-  <div class="modal" style="width:700px">
+  <div class="modal modal--wide">
     <div class="modal-header">
       <span class="modal-title">Tag Preview</span>
       <button class="modal-close" onclick="closeModal('modal-view')">✕</button>
     </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:16px">
+    <div class="modal-body modal-body--centered">
       <div id="modal-tag-wrap"></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      <div class="modal-actions--centered">
         <button class="btn btn-gold btn-sm" onclick="downloadModalPDF()">📄 PDF</button>
         <button class="btn btn-dark btn-sm" onclick="downloadModalPNG()">🖼️ PNG</button>
         <button class="btn btn-outline btn-sm" onclick="printModal()">🖨️ Print</button>
@@ -1244,33 +1290,33 @@
 
 <!-- ── MODAL: EDIT TAG ── -->
 <div class="modal-overlay" id="modal-edit">
-  <div class="modal" style="background: #1a1a1a; color: #f0f0f0">
-    <div class="modal-header" style="border-bottom-color: #333; color: #f0f0f0">
+  <div class="modal modal--dark">
+    <div class="modal-header modal-header--dark">
       <span class="modal-title">Edit Tag</span>
-      <button class="modal-close" onclick="closeModal('modal-edit')" style="color: #999">✕</button>
+      <button class="modal-close modal-close--dark" onclick="closeModal('modal-edit')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit-id">
-      <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Full Name</label>
-        <input type="text" id="edit-name" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
+      <div class="form-group modal-form-group">
+        <label class="modal-form-label--dark">Full Name</label>
+        <input type="text" id="edit-name" class="modal-form-input--dark">
       </div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Department</label>
-        <input type="text" id="edit-dept" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
+      <div class="form-group modal-form-group">
+        <label class="modal-form-label--dark">Department</label>
+        <input type="text" id="edit-dept" class="modal-form-input--dark">
       </div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Position</label>
-        <input type="text" id="edit-pos" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
+      <div class="form-group modal-form-group">
+        <label class="modal-form-label--dark">Position</label>
+        <input type="text" id="edit-pos" class="modal-form-input--dark">
       </div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label style="font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;color:#f0f0f0">Status</label>
-        <select id="edit-status" style="width:100%;padding:10px 13px;border:1.5px solid #444;border-radius:8px;font-size:0.9rem;outline:none;font-family:'DM Sans',sans-serif;background:#2a2a2a;color:#f0f0f0">
+      <div class="form-group modal-form-group">
+        <label class="modal-form-label--dark">Status</label>
+        <select id="edit-status" class="modal-form-input--dark">
           <option>Active</option><option>Inactive</option><option>Expired</option>
         </select>
       </div>
     </div>
-    <div class="modal-footer" style="border-top-color: #333">
+    <div class="modal-footer modal-footer--dark">
       <button class="btn btn-outline" onclick="closeModal('modal-edit')">Cancel</button>
       <button class="btn btn-gold" onclick="saveEdit()">💾 Save Changes</button>
     </div>
@@ -1279,13 +1325,13 @@
 
 <!-- ── MODAL: CONFIRM DELETE ── -->
 <div class="modal-overlay" id="modal-delete">
-  <div class="modal" style="width:400px">
+  <div class="modal modal--compact">
     <div class="modal-header">
       <span class="modal-title">Confirm Delete</span>
       <button class="modal-close" onclick="closeModal('modal-delete')">✕</button>
     </div>
     <div class="modal-body">
-      <p style="font-size:0.9rem;color:var(--ksg-gray)">Are you sure you want to delete this tag? This action cannot be undone.</p>
+      <p class="modal-copy">Are you sure you want to delete this tag? This action cannot be undone.</p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-delete')">Cancel</button>
@@ -1324,6 +1370,7 @@ let STATE = {
   deleteTarget: null,
   bulkData: [],
   modalTag: null,
+  selectedTagIds: [],
 };
 let currentRef = '';
 let previewRenderHandle = 0;
@@ -1771,6 +1818,47 @@ function applyTagFilters(){
   });
 }
 
+function syncSelectedTags(){
+  STATE.selectedTagIds = (STATE.selectedTagIds || []).filter((id) => STATE.tags.some((t) => t.id === id));
+}
+
+function updateBulkDownloadButton(){
+  const btn = document.getElementById('bulk-download-btn');
+  if (!btn) return;
+  const count = (STATE.selectedTagIds || []).length;
+  btn.disabled = count === 0;
+  btn.textContent = count ? `📥 Download Selected (${count})` : '📥 Download Selected';
+}
+
+function toggleTagSelection(id, checked){
+  const selected = new Set(STATE.selectedTagIds || []);
+  if (checked) selected.add(id); else selected.delete(id);
+  STATE.selectedTagIds = Array.from(selected);
+  updateBulkDownloadButton();
+  renderManageTable();
+}
+
+function toggleSelectVisible(checked){
+  const ids = filteredTags.map((t) => t.id);
+  if (checked) {
+    const selected = new Set(STATE.selectedTagIds || []);
+    ids.forEach((id) => selected.add(id));
+    STATE.selectedTagIds = Array.from(selected);
+  } else {
+    const selected = new Set(STATE.selectedTagIds || []);
+    ids.forEach((id) => selected.delete(id));
+    STATE.selectedTagIds = Array.from(selected);
+  }
+  updateBulkDownloadButton();
+  renderManageTable();
+}
+
+function clearTagSelection(){
+  STATE.selectedTagIds = [];
+  updateBulkDownloadButton();
+  renderManageTable();
+}
+
 function refreshTagDataViews(){
   if (dataViewRenderHandle) clearTimeout(dataViewRenderHandle);
   dataViewRenderHandle = setTimeout(() => {
@@ -1795,16 +1883,24 @@ function filterTags(search){
 }
 
 function renderManageTable(){
+  syncSelectedTags();
   applyTagFilters();
   const tbody=document.getElementById('manage-tbody');
   if(!tbody) return;
   document.getElementById('table-count').textContent=`${filteredTags.length} record${filteredTags.length!==1?'s':''}`;
   document.getElementById('nav-tag-count').textContent=STATE.tags.length;
-  if(!filteredTags.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>'; renderPagination(0); return; }
+  const selectAllCheckbox=document.getElementById('select-all-visible');
+  if(selectAllCheckbox){
+    const allVisibleSelected = filteredTags.length > 0 && filteredTags.every((t) => (STATE.selectedTagIds || []).includes(t.id));
+    selectAllCheckbox.checked = allVisibleSelected;
+  }
+  updateBulkDownloadButton();
+  if(!filteredTags.length){ tbody.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>'; renderPagination(0); return; }
   const start=(STATE.currentPage-1)*STATE.perPage, end=start+STATE.perPage;
   const page=filteredTags.slice(start,end);
   tbody.innerHTML=page.map((t,i)=>`
     <tr>
+      <td><input type="checkbox" ${((STATE.selectedTagIds || []).includes(t.id)) ? 'checked' : ''} onchange="toggleTagSelection('${t.id}', this.checked)"></td>
       <td>${start+i+1}</td>
       <td><code style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ksg-gold)">${t.reference_number}</code></td>
       <td><strong>${t.full_name}</strong></td>
@@ -1930,6 +2026,16 @@ function exportAll(){
   toast('CSV exported!','success');
 }
 
+function downloadSelectedTags(){
+  const selectedTags = STATE.tags.filter((t) => (STATE.selectedTagIds || []).includes(t.id));
+  if (!selectedTags.length) { toast('Select at least one tag to download.','error'); return; }
+  const rows=[['Ref No.','Full Name','Department','Position','Category','ID Number','Date Generated','Status','Created By']];
+  selectedTags.forEach((t)=>rows.push([t.reference_number,t.full_name,t.department,t.position,t.category,t.id_number,new Date(t.date_generated).toLocaleDateString('en-GB'),t.status||'Active',t.created_by]));
+  const csv=rows.map((r)=>r.map((c)=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download=`KSG_Selected_Tags_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  toast(`${selectedTags.length} selected tags downloaded!`,'success');
+}
+
 async function exportPDFReport(){
   if(!STATE.tags.length){ toast('No data to export.','error'); return; }
   const {jsPDF}=window.jspdf;
@@ -1968,13 +2074,48 @@ function handleDragLeave(){ document.getElementById('drop-zone').classList.remov
 function handleDrop(e){ e.preventDefault(); document.getElementById('drop-zone').classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) processBulkFile(f); }
 function handleFileUpload(e){ const f=e.target.files[0]; if(f) processBulkFile(f); }
 
+function normalizeBulkHeader(value){
+  return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+function getBulkRowValue(row, aliases){
+  const keys = Object.keys(row || {});
+  for (const alias of aliases) {
+    const normalizedAlias = normalizeBulkHeader(alias);
+    const match = keys.find((key) => normalizeBulkHeader(key) === normalizedAlias);
+    if (match !== undefined) return row[match];
+  }
+  return '';
+}
+
 function processBulkFile(file){
-  if(!file.name.match(/\.(csv|xlsx|xls)$/i)){ toast('Please upload a CSV or Excel file.','error'); return; }
-  Papa.parse(file,{
-    header:true, skipEmptyLines:true,
+  if(!file.name.match(/\.(csv|xlsx|xls|xlsm)$/i)){ toast('Please upload a CSV or Excel workbook file.','error'); return; }
+
+  if (/\.(xlsx|xls|xlsm)$/i.test(file.name)) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+        STATE.bulkData = rows;
+        renderBulkPreview(rows);
+      } catch (err) {
+        toast('Could not read Excel workbook. Please try a CSV or a simple worksheet file.', 'error');
+      }
+    };
+    reader.onerror = () => toast('File read failed. Please try again.', 'error');
+    reader.readAsArrayBuffer(file);
+    return;
+  }
+
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
     complete(results){
-      STATE.bulkData=results.data;
-      renderBulkPreview(results.data);
+      STATE.bulkData = results.data || [];
+      renderBulkPreview(results.data || []);
     }
   });
 }
@@ -1984,16 +2125,17 @@ function renderBulkPreview(data){
   document.getElementById('bulk-count').textContent=`${data.length} records`;
   document.getElementById('bulk-gen-actions').style.display='flex';
   const btnGen=document.getElementById('btn-bulk-gen');
-  const cols=['name','department','position','category','id_number'];
-  const headers=data[0]?Object.keys(data[0]).map(k=>k.toLowerCase()):[];
-  const hasAll=cols.every(c=>headers.some(h=>h.includes(c.replace('_number',''))));
-  if(!hasAll){ toast('Missing required columns. Check template.','error'); btnGen.disabled=true; return; }
+  const requiredCols=['fullname','department','category'];
+  const headers=data[0]?Object.keys(data[0]).map(normalizeBulkHeader):[];
+  const hasAll=requiredCols.every(c=>headers.includes(c));
+  if(!hasAll){ toast('Missing required columns. Required: full_name, department, category.','error'); btnGen.disabled=true; return; }
   btnGen.disabled=false;
-  tbody.innerHTML=data.map((row,i)=>{
-    const n=row.name||row.Name||''; const d=row.department||row.Department||'';
-    const cat=row.category||row.Category||''; const id=row.id_number||row['ID Number']||row.id||'';
-    const valid=n&&d&&cat&&id;
-    return `<tr><td>${n}</td><td>${d}</td><td><span class="badge badge-${(cat||'').toLowerCase()}">${cat}</span></td><td>${id}</td><td><span style="color:${valid?'var(--ksg-success)':'var(--ksg-danger)'};">${valid?'✓ Valid':'✗ Invalid'}</span></td></tr>`;
+  tbody.innerHTML=data.map((row)=>{
+    const n=getBulkRowValue(row, ['full_name','full name','fullname','name']);
+    const d=getBulkRowValue(row, ['department']);
+    const cat=getBulkRowValue(row, ['category']);
+    const valid=n&&d&&cat;
+    return `<tr><td>${n}</td><td>${d}</td><td><span class="badge badge-${(cat||'').toLowerCase()}">${cat}</span></td></tr>`;
   }).join('');
 }
 
@@ -2031,12 +2173,15 @@ function generateBulk(){
       return;
     }
     const row=STATE.bulkData[i];
-    const n=row.name||row.Name||''; const d=row.department||row.Department||'';
-    const p=row.position||row.Position||''; const cat=row.category||row.Category||'';
-    const id=row.id_number||row['ID Number']||row.id||'';
-    if(n&&d&&cat&&id){
-      if(!STATE.settings.dup||!STATE.tags.find(t=>t.id_number===id)){
-        const tag={reference_number:genRef(),full_name:n,department:d,position:p,category:cat,id_number:id,status:'Active',date_generated:new Date().toISOString(),created_by:STATE.user.email};
+    const n=getBulkRowValue(row, ['full_name','full name','fullname','name']);
+    const d=getBulkRowValue(row, ['department']);
+    const p=getBulkRowValue(row, ['position']);
+    const cat=getBulkRowValue(row, ['category']);
+    const id=getBulkRowValue(row, ['id_number','id number','id']);
+    if(n&&d&&cat){
+      const generatedId = id || `${Date.now()}-${i}`;
+      if(!STATE.settings.dup||!STATE.tags.find(t=>t.id_number===generatedId)){
+        const tag={reference_number:genRef(),full_name:n,department:d,position:p,category:cat,id_number:generatedId,status:'Active',date_generated:new Date().toISOString(),created_by:STATE.user.email};
         if(!KSGDb.enabled()) tag.id=Date.now()+i;
         batch.push(tag);
         gen++;
@@ -2048,10 +2193,10 @@ function generateBulk(){
   step();
 }
 
-function clearBulk(){ STATE.bulkData=[]; document.getElementById('bulk-preview-body').innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">📤</div><p>Upload a file to preview data</p></div></td></tr>'; document.getElementById('bulk-count').textContent='0 records'; document.getElementById('bulk-progress').style.display='none'; document.getElementById('bulk-file').value=''; }
+function clearBulk(){ STATE.bulkData=[]; document.getElementById('bulk-preview-body').innerHTML='<tr><td colspan="3"><div class="empty-state"><div class="empty-icon">📤</div><p>Upload a file to preview data</p></div></td></tr>'; document.getElementById('bulk-count').textContent='0 records'; document.getElementById('bulk-progress').style.display='none'; document.getElementById('bulk-file').value=''; }
 
 function downloadTemplate(){
-  const csv='name,department,position,category,id_number\nJohn Doe,ICT Department,Software Engineer,Staff,KSG/2024/001\nJane Smith,Finance & Accounts,Accounts Assistant,Intern,KSG/2024/002';
+  const csv='full_name,department,category\nJohn Doe,ICT Department,Staff\nJane Smith,Finance & Accounts,Intern';
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='KSG_Bulk_Template.csv'; a.click();
 }
 
