@@ -20,6 +20,7 @@ let lines = [
 ];
 let selectedId = lines[0].id;
 let dragId = null;
+let renderFrame = 0;
 
 const $ = (id) => document.getElementById(id);
 const tagEl = $("tag");
@@ -98,7 +99,15 @@ function renderControls() {
   $("txtColor").value = s.color;
 }
 
-function renderAll() { renderLinesList(); renderTag(); renderControls(); }
+function renderAll() {
+  if (renderFrame) cancelAnimationFrame(renderFrame);
+  renderFrame = requestAnimationFrame(() => {
+    renderFrame = 0;
+    renderLinesList();
+    renderTag();
+    renderControls();
+  });
+}
 
 function update(patch) {
   const s = getSelected();
@@ -135,8 +144,12 @@ tagEl.addEventListener("mousemove", (e) => {
   const l = lines.find(x => x.id === dragId);
   l.left = Math.max(0, Math.min(TAG_W, x));
   l.top = Math.max(0, Math.min(TAG_H, y));
-  renderTag();
-  renderControls();
+  if (renderFrame) cancelAnimationFrame(renderFrame);
+  renderFrame = requestAnimationFrame(() => {
+    renderFrame = 0;
+    renderTag();
+    renderControls();
+  });
 });
 document.addEventListener("mouseup", () => { dragId = null; });
 

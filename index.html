@@ -1326,12 +1326,21 @@ let STATE = {
   modalTag: null,
 };
 let currentRef = '';
+let previewRenderHandle = 0;
+let manageRenderHandle = 0;
+let dataViewRenderHandle = 0;
+let persistTimer = 0;
+let globalSearchTimer = 0;
 
 // ─── PERSISTENCE ─────────────────────────────
 function saveLocal(){
-  localStorage.setItem('ksg_tags', JSON.stringify(STATE.tags));
-  localStorage.setItem('ksg_logs', JSON.stringify(STATE.logs));
-  localStorage.setItem('ksg_settings', JSON.stringify(STATE.settings));
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(() => {
+    persistTimer = 0;
+    localStorage.setItem('ksg_tags', JSON.stringify(STATE.tags));
+    localStorage.setItem('ksg_logs', JSON.stringify(STATE.logs));
+    localStorage.setItem('ksg_settings', JSON.stringify(STATE.settings));
+  }, 0);
 }
 function save(){
   saveLocal();
@@ -1526,14 +1535,18 @@ function updateTagPreviewInit(){
 }
 
 function updatePreview(){
-  const name = document.getElementById('f-name').value.trim()||'FULL NAME';
-  const dept = document.getElementById('f-dept').value||'DEPARTMENT';
-  const pos = document.getElementById('f-position').value.trim();
-  const cat = document.getElementById('f-cat').value||'';
+  if (previewRenderHandle) clearTimeout(previewRenderHandle);
+  previewRenderHandle = setTimeout(() => {
+    previewRenderHandle = 0;
+    const name = document.getElementById('f-name').value.trim()||'FULL NAME';
+    const dept = document.getElementById('f-dept').value||'DEPARTMENT';
+    const pos = document.getElementById('f-position').value.trim();
+    const cat = document.getElementById('f-cat').value||'';
 
-  document.getElementById('pt-name').textContent = name.toUpperCase();
-  document.getElementById('pt-dept').textContent = dept.toUpperCase();
-  document.getElementById('pt-position').textContent = (pos||cat||'POSITION / ROLE').toUpperCase();
+    document.getElementById('pt-name').textContent = name.toUpperCase();
+    document.getElementById('pt-dept').textContent = dept.toUpperCase();
+    document.getElementById('pt-position').textContent = (pos||cat||'POSITION / ROLE').toUpperCase();
+  }, 16);
 }
 
 function getTagFormData(){
@@ -1759,9 +1772,13 @@ function applyTagFilters(){
 }
 
 function refreshTagDataViews(){
-  updateDashboard();
-  if(document.getElementById('manage-tbody')) renderManageTable();
-  if(document.getElementById('report-stats')) renderReports();
+  if (dataViewRenderHandle) clearTimeout(dataViewRenderHandle);
+  dataViewRenderHandle = setTimeout(() => {
+    dataViewRenderHandle = 0;
+    updateDashboard();
+    if(document.getElementById('manage-tbody')) renderManageTable();
+    if(document.getElementById('report-stats')) renderReports();
+  }, 16);
 }
 
 function filterTags(search){
@@ -1769,8 +1786,12 @@ function filterTags(search){
     const input = document.querySelector('#page-manage .search-box input');
     if(input) input.value = search;
   }
-  STATE.currentPage=1;
-  renderManageTable();
+  if (manageRenderHandle) clearTimeout(manageRenderHandle);
+  manageRenderHandle = setTimeout(() => {
+    manageRenderHandle = 0;
+    STATE.currentPage=1;
+    renderManageTable();
+  }, 40);
 }
 
 function renderManageTable(){
@@ -2035,11 +2056,33 @@ function downloadTemplate(){
 }
 
 // ─── DASHBOARD ────────────────────────────────
+function getTagStats(tags = STATE.tags){
+  const now = new Date();
+  const todayKey = now.toDateString();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+  let active = 0;
+  let today = 0;
+  let thisMonth = 0;
+  const departments = new Set();
+
+  tags.forEach(t => {
+    if(!t.status || t.status === 'Active') active++;
+    const generatedAt = new Date(t.date_generated);
+    if(generatedAt.toDateString() === todayKey) today++;
+    if(generatedAt.getMonth() === month && generatedAt.getFullYear() === year) thisMonth++;
+    if(t.department) departments.add(t.department);
+  });
+
+  return { total: tags.length, active, today, thisMonth, departments: departments.size };
+}
+
 function updateDashboard(){
-  document.getElementById('stat-total').textContent=STATE.tags.length;
-  document.getElementById('stat-active').textContent=STATE.tags.filter(t=>!t.status||t.status==='Active').length;
-  document.getElementById('stat-today').textContent=STATE.tags.filter(t=>new Date(t.date_generated).toDateString()===new Date().toDateString()).length;
-  document.getElementById('nav-tag-count').textContent=STATE.tags.length;
+  const stats = getTagStats();
+  document.getElementById('stat-total').textContent=stats.total;
+  document.getElementById('stat-active').textContent=stats.active;
+  document.getElementById('stat-today').textContent=stats.today;
+  document.getElementById('nav-tag-count').textContent=stats.total;
   // Recent tags
   const tbody=document.getElementById('recent-tags-body');
   const recent=STATE.tags.slice(0,5);
@@ -2060,6 +2103,7 @@ function renderCategoryChart(elId){
 
 // ─── REPORTS ──────────────────────────────────
 function renderReports(){
+  const stats = getTagStats();
   renderCategoryChart('rpt-category');
   // Department chart
   const depts=[...new Set(STATE.tags.map(t=>t.department||'Unknown'))].slice(0,6);
@@ -2072,10 +2116,10 @@ function renderReports(){
   document.getElementById('rpt-trend').innerHTML=days.map(d=>{ const c=STATE.tags.filter(t=>new Date(t.date_generated).toDateString()===d.toDateString()).length; return `<div class="chart-bar-item"><div class="chart-bar-label" style="font-size:0.75rem">${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric'})}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(c/maxT)*100}%;background:var(--ksg-gold)"></div></div><div class="chart-bar-val">${c}</div></div>`; }).join('');
   // Stats
   document.getElementById('report-stats').innerHTML=`
-    <div class="stat-card gold"><div class="stat-icon">🏷️</div><div class="stat-value">${STATE.tags.length}</div><div class="stat-label">Total Tags</div></div>
-    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">${STATE.tags.filter(t=>!t.status||t.status==='Active').length}</div><div class="stat-label">Active</div></div>
-    <div class="stat-card blue"><div class="stat-icon">🏢</div><div class="stat-value">${new Set(STATE.tags.map(t=>t.department)).size}</div><div class="stat-label">Departments</div></div>
-    <div class="stat-card red"><div class="stat-icon">📅</div><div class="stat-value">${STATE.tags.filter(t=>new Date(t.date_generated).getMonth()===new Date().getMonth()).length}</div><div class="stat-label">This Month</div></div>`;
+    <div class="stat-card gold"><div class="stat-icon">🏷️</div><div class="stat-value">${stats.total}</div><div class="stat-label">Total Tags</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">${stats.active}</div><div class="stat-label">Active</div></div>
+    <div class="stat-card blue"><div class="stat-icon">🏢</div><div class="stat-value">${stats.departments}</div><div class="stat-label">Departments</div></div>
+    <div class="stat-card red"><div class="stat-icon">📅</div><div class="stat-value">${stats.thisMonth}</div><div class="stat-label">This Month</div></div>`;
 }
 
 // ─── ACTIVITY LOGS ────────────────────────────
@@ -2302,8 +2346,12 @@ async function clearAllData(){
 // ─── GLOBAL SEARCH ────────────────────────────
 function globalSearch(q){
   if(!q) return;
-  gotoPage('manage',document.querySelectorAll('.nav-item')[2]);
-  setTimeout(()=>{ document.querySelector('#page-manage .search-box input').value=q; filterTags(q); },100);
+  if (globalSearchTimer) clearTimeout(globalSearchTimer);
+  globalSearchTimer = setTimeout(() => {
+    globalSearchTimer = 0;
+    gotoPage('manage',document.querySelectorAll('.nav-item')[2]);
+    setTimeout(()=>{ document.querySelector('#page-manage .search-box input').value=q; filterTags(q); },60);
+  }, 80);
 }
 
 // ─── NOTIFICATIONS ────────────────────────────
