@@ -942,7 +942,7 @@
                   </select>
                 </div>
                 <div class="form-actions">
-                  <button class="btn btn-gold" onclick="generateTagPDF()">📄 Generate PDF</button>
+                  <button class="btn btn-gold" onclick="generateTagWord()">📝 Generate Word</button>
                   <button class="btn btn-dark" onclick="generateTagPNG()">🖼️ Generate PNG</button>
                   <button class="btn btn-outline" onclick="clearForm()">✕ Clear</button>
                 </div>
@@ -965,15 +965,15 @@
                         <option>Georgia</option><option>Courier New</option><option>Verdana</option>
                         <option>Tahoma</option><option>Trebuchet MS</option>
                       </select></div>
-                    <div><div class="style-panel-row"><span style="font-weight:600;">FONT SIZE</span><span id="sp-size-v">24px</span></div>
+                    <div><div class="style-panel-row"><span class="style-panel-label">FONT SIZE</span><span id="sp-size-v">24px</span></div>
                       <input type="range" id="sp-size" min="8" max="80" value="24" class="style-panel-range"></div>
-                    <div><div class="style-panel-row"><span style="font-weight:600;">WEIGHT</span><span id="sp-w-v">700</span></div>
+                    <div><div class="style-panel-row"><span class="style-panel-label">WEIGHT</span><span id="sp-w-v">700</span></div>
                       <input type="range" id="sp-w" min="100" max="900" step="100" value="700" class="style-panel-range"></div>
-                    <div><div class="style-panel-row"><span style="font-weight:600;">LETTER SPACING</span><span id="sp-ls-v">0.5px</span></div>
+                    <div><div class="style-panel-row"><span class="style-panel-label">LETTER SPACING</span><span id="sp-ls-v">0.5px</span></div>
                       <input type="range" id="sp-ls" min="-2" max="10" step="0.1" value="0.5" class="style-panel-range"></div>
-                    <div><div class="style-panel-row"><span style="font-weight:600;">TOP</span><span id="sp-top-v">183px</span></div>
+                    <div><div class="style-panel-row"><span class="style-panel-label">TOP</span><span id="sp-top-v">183px</span></div>
                       <input type="range" id="sp-top" min="0" max="325" value="183" class="style-panel-range"></div>
-                    <div><div class="style-panel-row"><span style="font-weight:600;">LEFT</span><span id="sp-left-v">257px</span></div>
+                    <div><div class="style-panel-row"><span class="style-panel-label">LEFT</span><span id="sp-left-v">257px</span></div>
                       <input type="range" id="sp-left" min="0" max="526" value="257" class="style-panel-range"></div>
                     <div class="style-panel-inline">
                       <label class="style-panel-check">
@@ -1000,8 +1000,8 @@
                     <!-- wave background injected by JS into #wave-bg-slot -->
                     <div id="wave-bg-slot"></div>
                     <div class="tag-content">
-                      <div class="tag-coa"><img src="" id="pt-coa-img" alt="Kenya Coat of Arms"></div>
-                      <div class="tag-ksg"><img src="" id="pt-ksg-img" alt="KSG Logo"></div>
+                      <div class="tag-coa"><img src="about:blank" id="pt-coa-img" alt="Kenya Coat of Arms"></div>
+                      <div class="tag-ksg"><img src="about:blank" id="pt-ksg-img" alt="KSG Logo"></div>
                       <div class="tag-org-name" id="pt-orgname">KENYA SCHOOL OF GOVERNMENT</div>
                       <div class="tag-name" id="pt-name">ROY MBECHE</div>
                       <div class="tag-position" id="pt-position">ATTACHEE</div>
@@ -1014,7 +1014,7 @@
                   </div>
                 </div>
                 <div class="preview-actions">
-                  <button class="btn btn-gold btn-sm" onclick="generateTagPDF()">📄 Generate PDF</button>
+                  <button class="btn btn-gold btn-sm" onclick="generateTagWord()">📝 Generate Word</button>
                   <button class="btn btn-dark btn-sm" onclick="generateTagPNG()">🖼️ Generate PNG</button>
                 </div>
               </div>
@@ -1042,7 +1042,7 @@
               <option value="">All Status</option>
               <option>Active</option><option>Inactive</option><option>Expired</option>
             </select>
-            <button class="btn btn-outline btn-sm" id="bulk-download-btn" onclick="downloadSelectedTags()" disabled>📥 Download Selected</button>
+            <button class="btn btn-outline btn-sm" id="bulk-download-btn" onclick="downloadSelectedTags()" disabled>� Download Selected Tags (PDF)</button>
             <button class="btn btn-gold btn-sm" onclick="exportAll()">📥 Export CSV</button>
             <button class="btn btn-dark btn-sm" onclick="exportPDFReport()">📄 PDF Report</button>
           </div>
@@ -1057,8 +1057,7 @@
                   <tr>
                     <th><input type="checkbox" id="select-all-visible" onchange="toggleSelectVisible(this.checked)"></th>
                     <th>#</th><th>Ref No.</th><th>Full Name</th><th>Department</th>
-                    <th>Position</th><th>Category</th><th>ID Number</th>
-                    <th>Date</th><th>Status</th><th>Actions</th>
+                    <th>Category</th><th>ID Number</th><th>Date</th><th>Status</th><th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="manage-tbody">
@@ -1111,8 +1110,8 @@
                   </tbody>
                 </table>
               </div>
-              <div class="bulk-actions-row hidden" id="bulk-gen-actions">
-                <button class="btn btn-gold" id="btn-bulk-gen" onclick="generateBulk()" disabled>⚡ Generate All Tags</button>
+              <div class="bulk-actions-row" id="bulk-gen-actions">
+                <button class="btn btn-gold" id="btn-bulk-gen" onclick="generateBulk()" disabled>⚡ Generate All Tags in Bulk</button>
                 <button class="btn btn-outline" onclick="clearBulk()">✕ Clear</button>
               </div>
             </div>
@@ -1425,27 +1424,39 @@ async function doLogin(){
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   if(!email||!pass){ showAuthAlert('login','Please enter email and password.','error'); return; }
-  if(KSGSupabase.isConfigured()){
-    try{
-      const sb = KSGSupabase.init();
-      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-      if(error){ showAuthAlert('login', error.message, 'error'); return; }
-      await setUserFromSession(data.user);
-      initApp();
-      return;
-    }catch(e){ showAuthAlert('login', e.message||'Login failed.', 'error'); return; }
-  }
+
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [
     {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'},
     {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'superadmin'}
   ];
-  const user = users.find(u=>u.email===email&&u.pass===pass);
-  if(!user){ showAuthAlert('login','Invalid email or password.','error'); return; }
-  STATE.user = user;
-  localStorage.setItem('ksg_user', JSON.stringify(user));
-  initApp();
-  logActivity(`User logged in: ${email} (${user.role})`, 'login');
+  const localUser = users.find(u=>u.email===email&&u.pass===pass);
+  if(localUser){
+    STATE.user = { ...localUser, id: localUser.id || `local-${Date.now()}` };
+    localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
+    initApp();
+    logActivity(`User logged in: ${email} (${STATE.user.role})`, 'login');
+    return;
+  }
+
+  if(KSGSupabase.isConfigured()){
+    try{
+      const sb = KSGSupabase.init();
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if(!error && data?.user){
+        await setUserFromSession(data.user);
+        initApp();
+        return;
+      }
+      if(error){
+        console.warn('Supabase login failed:', error.message);
+      }
+    }catch(e){
+      console.warn('Supabase login unavailable:', e.message);
+    }
+  }
+
+  showAuthAlert('login','Invalid email or password.','error');
 }
 
 async function doRegister(){
@@ -1539,6 +1550,8 @@ async function initApp(){
   applySettings();
   refreshTagDataViews();
   updateTagPreviewInit();
+  const dashboardBtn = document.querySelector('.nav-item');
+  if(dashboardBtn) gotoPage('dashboard', dashboardBtn);
   logActivity(`User logged in: ${STATE.user.email} (${STATE.user.role})`, 'login');
   toast('Welcome back, '+(STATE.user.name||'Admin')+'! 👋');
 }
@@ -1699,30 +1712,48 @@ async function persistCurrentTag(){
   return { tag: STATE.tags[0], ref, name: tag.full_name };
 }
 
-async function generateTagPDF(){
+async function generateTagWord(){
   if(!validateForm()) return;
   const ref = currentRef;
-  const el = document.getElementById('id-tag');
-  if(!el){ toast('Tag preview not found.', 'error'); return; }
+  const data = getTagFormData();
   try{
-    const canvas = await exportTagCanvas(el);
-    const img = canvas.toDataURL('image/png');
-    const JsPDF = getJsPDF();
-    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
-    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight();
-    const imgW = 86, imgH = (canvas.height / canvas.width) * imgW;
-    pdf.addImage(img, 'PNG', (pw - imgW) / 2, (ph - imgH) / 2, imgW, imgH);
-    pdf.save(`KSG-Tag-${ref}.pdf`);
+    const content = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>KSG Tag ${ref}</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; padding: 24px; color: #0A1628;">
+    <h1 style="margin: 0 0 12px; color: #C9A84C;">KENYA SCHOOL OF GOVERNMENT</h1>
+    <h2 style="margin: 0 0 16px;">Identification Tag</h2>
+    <p style="margin: 8px 0;"><strong>Name:</strong> ${data.full_name || '—'}</p>
+    <p style="margin: 8px 0;"><strong>Department:</strong> ${data.department || '—'}</p>
+    <p style="margin: 8px 0;"><strong>Category:</strong> ${data.category || '—'}</p>
+    <p style="margin: 8px 0;"><strong>Reference:</strong> ${ref}</p>
+    <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
+  </body>
+</html>`;
+
+    const blob = new Blob([content], { type: 'application/msword;charset=utf-8' });
+    const a = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = `KSG-Tag-${ref}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
     try{
       const saved = await persistCurrentTag();
       updateTagPreviewInit();
       updatePreview();
-      toast(`PDF generated for ${saved.name}. Updated in Manage Tags & Reports.`, 'success');
+      toast(`Word document generated for ${saved.name}. Updated in Manage Tags & Reports.`, 'success');
     }catch(e){
-      toast('PDF downloaded but tag could not be saved: ' + e.message, 'error');
+      toast('Word document downloaded but tag could not be saved: ' + e.message, 'error');
     }
   }catch(e){
-    toast('PDF generation failed: ' + (e.message || 'Unknown error'), 'error');
+    toast('Word generation failed: ' + (e.message || 'Unknown error'), 'error');
     console.error(e);
   }
 }
@@ -1827,7 +1858,7 @@ function updateBulkDownloadButton(){
   if (!btn) return;
   const count = (STATE.selectedTagIds || []).length;
   btn.disabled = count === 0;
-  btn.textContent = count ? `📥 Download Selected (${count})` : '📥 Download Selected';
+  btn.textContent = count ? `� Download Selected Tags (${count})` : '📄 Download Selected Tags (PDF)';
 }
 
 function toggleTagSelection(id, checked){
@@ -1895,7 +1926,7 @@ function renderManageTable(){
     selectAllCheckbox.checked = allVisibleSelected;
   }
   updateBulkDownloadButton();
-  if(!filteredTags.length){ tbody.innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>'; renderPagination(0); return; }
+  if(!filteredTags.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>'; renderPagination(0); return; }
   const start=(STATE.currentPage-1)*STATE.perPage, end=start+STATE.perPage;
   const page=filteredTags.slice(start,end);
   tbody.innerHTML=page.map((t,i)=>`
@@ -1905,7 +1936,6 @@ function renderManageTable(){
       <td><code style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ksg-gold)">${t.reference_number}</code></td>
       <td><strong>${t.full_name}</strong></td>
       <td>${t.department||'—'}</td>
-      <td>${t.position||'—'}</td>
       <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category||'—'}</span></td>
       <td><code style="font-size:0.8rem;font-family:'DM Mono',monospace">${t.id_number}</code></td>
       <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
@@ -2026,14 +2056,68 @@ function exportAll(){
   toast('CSV exported!','success');
 }
 
-function downloadSelectedTags(){
+async function downloadSelectedTags(){
   const selectedTags = STATE.tags.filter((t) => (STATE.selectedTagIds || []).includes(t.id));
   if (!selectedTags.length) { toast('Select at least one tag to download.','error'); return; }
-  const rows=[['Ref No.','Full Name','Department','Position','Category','ID Number','Date Generated','Status','Created By']];
-  selectedTags.forEach((t)=>rows.push([t.reference_number,t.full_name,t.department,t.position,t.category,t.id_number,new Date(t.date_generated).toLocaleDateString('en-GB'),t.status||'Active',t.created_by]));
-  const csv=rows.map((r)=>r.map((c)=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download=`KSG_Selected_Tags_${new Date().toISOString().slice(0,10)}.csv`; a.click();
-  toast(`${selectedTags.length} selected tags downloaded!`,'success');
+  if (!window.jspdf?.jsPDF && !window.jsPDF) { toast('PDF library failed to load.','error'); return; }
+
+  try {
+    const JsPDF = getJsPDF();
+    const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const contentWidth = pageWidth - (margin * 2);
+
+    for (let index = 0; index < selectedTags.length; index += 1) {
+      const tag = selectedTags[index];
+      const tempWrap = document.createElement('div');
+      tempWrap.style.position = 'fixed';
+      tempWrap.style.left = '-9999px';
+      tempWrap.style.top = '0';
+      tempWrap.style.width = '90mm';
+      tempWrap.style.background = '#ffffff';
+      tempWrap.style.zIndex = '-1';
+      document.body.appendChild(tempWrap);
+
+      try {
+        tempWrap.innerHTML = buildTagHTML(tag);
+        const tagEl = tempWrap.querySelector('.id-tag');
+        if (!tagEl) continue;
+        tagEl.style.width = '90mm';
+        tagEl.style.height = '56mm';
+        tagEl.style.margin = '0';
+
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const canvas = await captureTagElement(tagEl);
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = contentWidth;
+        const imgHeight = (canvas.height / canvas.width) * imgWidth;
+
+        if (index > 0) pdf.addPage();
+        pdf.setFillColor(10, 22, 40);
+        pdf.rect(0, 0, pageWidth, 12, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${tag.reference_number} — ${tag.full_name || 'Unnamed Tag'}`, pageWidth / 2, 6, { align: 'center' });
+
+        pdf.addImage(imgData, 'PNG', margin, 16, imgWidth, Math.min(imgHeight, pageHeight - 34));
+        pdf.setTextColor(10, 22, 40);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(`Department: ${tag.department || '—'}  |  Position: ${tag.position || '—'}  |  Date: ${new Date(tag.date_generated).toLocaleDateString('en-GB')}`, margin, pageHeight - 6);
+      } finally {
+        tempWrap.remove();
+      }
+    }
+
+    pdf.save(`KSG_Selected_Tags_${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast(`${selectedTags.length} selected tags downloaded as PDF!`,'success');
+  } catch (error) {
+    console.error(error);
+    toast('Failed to export selected tags as PDF: ' + (error.message || 'Unknown error'), 'error');
+  }
 }
 
 async function exportPDFReport(){
