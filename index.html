@@ -306,13 +306,13 @@
   .modal-body--centered { display: flex; flex-direction: column; align-items: center; gap: 16px; }
   .modal-actions--centered { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
   .modal--dark { background: #000000; color: #ffffff; }
-  .modal-header--dark { background: #FF8C00; border-bottom-color: #ffffff; color: #000000; }
+  .modal-header--dark { background: #000000; border-bottom-color: #000000; color: #ffffff; }
   .modal-close--dark { color: #ffffff; }
   .modal-form-group { margin-bottom: 16px; }
   .modal-form-label--dark { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; color: #ffffff; }
-  .modal-form-input--dark { width: 100%; padding: 10px 13px; border: 1.5px solid #FF8C00; border-radius: 8px; font-size: 0.9rem; outline: none; font-family: 'DM Sans', sans-serif; background: #1a1a1a; color: #ffffff; }
-  .modal-form-input--dark:focus { border-color: #FF8C00; box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.2); }
-  .modal-footer--dark { border-top-color: #FF8C00; }
+  .modal-form-input--dark { width: 100%; padding: 10px 13px; border: 1.5px solid var(--ksg-gold); border-radius: 8px; font-size: 0.9rem; outline: none; font-family: 'DM Sans', sans-serif; background: #ffffff; color: #000000; }
+  .modal-form-input--dark:focus { border-color: var(--ksg-gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+  .modal-footer--dark { border-top-color: #000000; }
   .modal-copy { font-size: 0.9rem; color: var(--ksg-gray); }
   .modal--compact { width: 400px; }
   .hidden { display: none !important; }
@@ -925,8 +925,8 @@
               <div class="gen-form">
                 <div class="form-row">
                   <div class="form-group">
-                    <label>Full Name *</label>
-                    <input type="text" id="f-name" placeholder="e.g. John Kamau Mwangi" oninput="updatePreview()">
+                    <label class="modal-form-label--dark">Full Name *</label>
+                    <input type="text" id="f-name" placeholder="e.g. John Kamau Mwangi" oninput="updatePreview()" class="modal-form-input--dark">
                     <div class="field-error" id="err-name"></div>
                   </div>
                   <input type="hidden" id="f-idnum" value="">
@@ -934,8 +934,8 @@
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label>Department *</label>
-                    <select id="f-dept" onchange="updatePreview()">
+                    <label class="modal-form-label--dark">Department *</label>
+                    <select id="f-dept" onchange="updatePreview()" class="modal-form-input--dark">
                       <option value="">Select Department</option>
                       <option>ICT Department</option>
                       <option>Finance & Accounts</option>
@@ -955,8 +955,8 @@
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label>Category *</label>
-                    <select id="f-cat" onchange="updatePreview()">
+                    <label class="modal-form-label--dark">Category *</label>
+                    <select id="f-cat" onchange="updatePreview()" class="modal-form-input--dark">
                       <option value="">Select Category</option>
                       <option value="Staff">Staff</option>
                       <option value="Attachee">Attachee</option>

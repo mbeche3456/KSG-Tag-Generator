@@ -446,6 +446,33 @@ async function saveTagOnly(){
   }
 }
 
+function computeExportSize(canvas, maxWidthMM, maxHeightMM){
+  const aspect = canvas.width / canvas.height; // px ratio
+  // Fit preserving aspect ratio into the max box (mm)
+  if ((maxWidthMM / maxHeightMM) > aspect) {
+    // box is relatively wider → limit by height
+    const height = maxHeightMM;
+    const width = height * aspect;
+    return { width, height };
+  } else {
+    // limit by width
+    const width = maxWidthMM;
+    const height = width / aspect;
+    return { width, height };
+  }
+}
+
+function resizeCanvasTo(sourceCanvas, targetW, targetH){
+  const tmp = document.createElement('canvas');
+  tmp.width = targetW;
+  tmp.height = targetH;
+  const ctx = tmp.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,tmp.width,tmp.height);
+  ctx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, tmp.width, tmp.height);
+  return tmp;
+}
+
 async function generateTagPDF(){
   if(!validateForm()) return;
   const ref = currentRef;
@@ -453,13 +480,16 @@ async function generateTagPDF(){
   if(!el){ toast('Tag preview not found.', 'error'); return; }
   try{
     const canvas = await exportTagCanvas(el);
+    // resize to target pixel dims (511x317) at provided DPI
+    const resized = resizeCanvasTo(canvas, 511, 317);
     const JsPDF = getJsPDF();
-    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
+    const exportW = 85.6; // mm (fixed)
+    const exportH = 53.9; // mm (fixed)
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [exportW, exportH] });
     const pw = pdf.internal.pageSize.getWidth();
     const ph = pdf.internal.pageSize.getHeight();
-    const imgW = 86;
-    const imgH = (canvas.height / canvas.width) * imgW;
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pw - imgW) / 2, (ph - imgH) / 2, imgW, imgH);
+    // Insert PNG at exact dimensions requested
+    pdf.addImage(resized.toDataURL('image/png'), 'PNG', (pw - exportW) / 2, (ph - exportH) / 2, exportW, exportH);
     pdf.save(`KSG-Tag-${ref}.pdf`);
 
     try{
@@ -542,12 +572,14 @@ async function downloadModalPDF(){
   if(!el) return;
   try{
     const canvas=await captureTagElement(el);
-    const img=canvas.toDataURL('image/png');
+    const resized = resizeCanvasTo(canvas, 511, 317);
+    const img=resized.toDataURL('image/png');
     const JsPDF=getJsPDF();
-    const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:[90,56]});
+    const exportW = 85.6; // mm (fixed)
+    const exportH = 53.9; // mm (fixed)
+    const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:[exportW,exportH]});
     const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
-    const imgW=86, imgH=(canvas.height/canvas.width)*imgW;
-    pdf.addImage(img,'PNG',(pw-imgW)/2,(ph-imgH)/2,imgW,imgH);
+    pdf.addImage(img,'PNG',(pw-exportW)/2,(ph-exportH)/2,exportW,exportH);
     pdf.save(`KSG-Tag-${STATE.modalTag.reference_number}.pdf`);
     toast('PDF downloaded!','success');
   }catch(e){ toast('Export failed: '+(e.message||'Unknown error'),'error'); }
@@ -559,8 +591,9 @@ async function downloadModalPNG(){
   if(!el) return;
   try{
     const canvas=await captureTagElement(el);
+    const resized = resizeCanvasTo(canvas, 511, 317);
     const a=document.createElement('a');
-    a.href=canvas.toDataURL('image/png');
+    a.href=resized.toDataURL('image/png');
     a.download=`KSG-Tag-${STATE.modalTag.reference_number}.png`;
     document.body.appendChild(a);
     a.click();
@@ -815,8 +848,8 @@ async function downloadSelectedTags(){
     const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const tagWidth = 90;
-    const tagHeight = 56;
+    const tagWidth = 85.6; // mm (cell width)
+    const tagHeight = 53.9; // mm (cell height)
     const margin = 5;
     const colGap = 3;
     const rowGap = 8;
@@ -855,12 +888,14 @@ async function downloadSelectedTags(){
         
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const canvas = await captureTagElement(tagEl);
-        const imgData = canvas.toDataURL('image/png');
-        
+        const resized = resizeCanvasTo(canvas, 511, 317);
+        const imgData = resized.toDataURL('image/png');
         const yPos = margin + (currentRow * (tagHeight + rowGap));
         const xPos = columnIndex === 0 ? leftX : columnIndex === 1 ? middleX : rightX;
-        
-        pdf.addImage(imgData, 'PNG', xPos, yPos, tagWidth, tagHeight);
+        // place PNG at exact cell dimensions
+        const imgX = xPos;
+        const imgY = yPos;
+        pdf.addImage(imgData, 'PNG', imgX, imgY, tagWidth, tagHeight);
         
         // Move to next row after right column
         if (columnIndex === 2) {
