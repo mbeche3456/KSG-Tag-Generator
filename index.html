@@ -1466,9 +1466,10 @@ function load(){
 
 // ─── AUTH ─────────────────────────────────────
 function switchAuthTab(tab){
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',['login','register','reset'][i]===tab));
+  // Login should always remain the active auth page.
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active', i===0));
   document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));
-  document.getElementById('form-'+tab).classList.add('active');
+  document.getElementById('form-login').classList.add('active');
 }
 
 async function doLogin(){
@@ -1645,31 +1646,44 @@ function updateTagPreviewInit(){
   document.getElementById('pt-orgname').textContent = (STATE.settings.org||'KENYA SCHOOL OF GOVERNMENT').toUpperCase();
 }
 
+const PREVIEW_REFS = {
+  nameEl: null,
+  deptEl: null,
+  posEl: null,
+  catEl: null,
+  ptName: null,
+  ptDept: null,
+  ptPos: null,
+};
+
 function updatePreview(){
   if (previewRenderHandle) {
     cancelAnimationFrame(previewRenderHandle);
   }
   previewRenderHandle = requestAnimationFrame(() => {
     previewRenderHandle = 0;
-    const nameEl = document.getElementById('f-name');
-    const deptEl = document.getElementById('f-dept');
-    const posEl = document.getElementById('f-position');
-    const catEl = document.getElementById('f-cat');
-    
-    if(!nameEl||!deptEl||!posEl||!catEl) return;
-    
-    const name = nameEl.value.trim()||'FULL NAME';
-    const dept = deptEl.value||'DEPARTMENT';
+
+    if (!PREVIEW_REFS.nameEl) {
+      PREVIEW_REFS.nameEl = document.getElementById('f-name');
+      PREVIEW_REFS.deptEl = document.getElementById('f-dept');
+      PREVIEW_REFS.posEl = document.getElementById('f-position');
+      PREVIEW_REFS.catEl = document.getElementById('f-cat');
+      PREVIEW_REFS.ptName = document.getElementById('pt-name');
+      PREVIEW_REFS.ptDept = document.getElementById('pt-dept');
+      PREVIEW_REFS.ptPos = document.getElementById('pt-position');
+    }
+
+    const { nameEl, deptEl, posEl, catEl, ptName, ptDept, ptPos } = PREVIEW_REFS;
+    if(!nameEl || !deptEl || !posEl || !catEl || !ptName || !ptDept || !ptPos) return;
+
+    const name = nameEl.value.trim() || 'FULL NAME';
+    const dept = deptEl.value || 'DEPARTMENT';
     const pos = posEl.value.trim();
-    const cat = catEl.value||'';
-    
-    const ptName = document.getElementById('pt-name');
-    const ptDept = document.getElementById('pt-dept');
-    const ptPos = document.getElementById('pt-position');
-    
-    if(ptName) ptName.textContent = name.toUpperCase();
-    if(ptDept) ptDept.textContent = dept.toUpperCase();
-    if(ptPos) ptPos.textContent = (pos||cat||'POSITION / ROLE').toUpperCase();
+    const cat = catEl.value || '';
+
+    ptName.textContent = name.toUpperCase();
+    ptDept.textContent = dept.toUpperCase();
+    ptPos.textContent = (pos || cat || 'POSITION / ROLE').toUpperCase();
   });
 }
 
@@ -1967,7 +1981,8 @@ function applyTagFilters(){
 }
 
 function syncSelectedTags(){
-  STATE.selectedTagIds = (STATE.selectedTagIds || []).filter((id) => STATE.tags.some((t) => t.id === id));
+  const validIds = new Set(STATE.tags.map((t) => t.id));
+  STATE.selectedTagIds = (STATE.selectedTagIds || []).filter((id) => validIds.has(id));
 }
 
 function updateBulkDownloadButton(){
@@ -1983,28 +1998,45 @@ function toggleTagSelection(id, checked){
   if (checked) selected.add(id); else selected.delete(id);
   STATE.selectedTagIds = Array.from(selected);
   updateBulkDownloadButton();
-  renderManageTable();
+
+  const selectAllCheckbox = document.getElementById('select-all-visible');
+  if (selectAllCheckbox) {
+    selectAllCheckbox.checked = filteredTags.length > 0 && filteredTags.every((t) => selected.has(t.id));
+  }
 }
 
 function toggleSelectVisible(checked){
-  const ids = filteredTags.map((t) => t.id);
+  const visibleIds = filteredTags.map((t) => t.id);
+  const selected = new Set(STATE.selectedTagIds || []);
+
   if (checked) {
-    const selected = new Set(STATE.selectedTagIds || []);
-    ids.forEach((id) => selected.add(id));
-    STATE.selectedTagIds = Array.from(selected);
+    visibleIds.forEach((id) => selected.add(id));
   } else {
-    const selected = new Set(STATE.selectedTagIds || []);
-    ids.forEach((id) => selected.delete(id));
-    STATE.selectedTagIds = Array.from(selected);
+    visibleIds.forEach((id) => selected.delete(id));
   }
+
+  STATE.selectedTagIds = Array.from(selected);
   updateBulkDownloadButton();
-  renderManageTable();
+
+  const tbody = document.getElementById('manage-tbody');
+  if (tbody) {
+    tbody.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+      const rowId = checkbox.getAttribute('data-tag-id');
+      if (rowId) checkbox.checked = checked;
+    });
+  }
 }
 
 function clearTagSelection(){
   STATE.selectedTagIds = [];
   updateBulkDownloadButton();
-  renderManageTable();
+
+  const tbody = document.getElementById('manage-tbody');
+  if (tbody) {
+    tbody.querySelectorAll('input[type="checkbox"]').forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+  }
 }
 
 function refreshTagDataViews(){
@@ -2033,43 +2065,53 @@ function filterTags(search){
 function renderManageTable(){
   syncSelectedTags();
   applyTagFilters();
-  const tbody=document.getElementById('manage-tbody');
+  const tbody = document.getElementById('manage-tbody');
   if(!tbody) return;
-  document.getElementById('table-count').textContent=`${filteredTags.length} record${filteredTags.length!==1?'s':''}`;
-  document.getElementById('nav-tag-count').textContent=STATE.tags.length;
-  const selectAllCheckbox=document.getElementById('select-all-visible');
+
+  const selectedIds = new Set(STATE.selectedTagIds || []);
+  const totalVisible = filteredTags.length;
+  document.getElementById('table-count').textContent = `${totalVisible} record${totalVisible !== 1 ? 's' : ''}`;
+  document.getElementById('nav-tag-count').textContent = STATE.tags.length;
+
+  const selectAllCheckbox = document.getElementById('select-all-visible');
   if(selectAllCheckbox){
-    const allVisibleSelected = filteredTags.length > 0 && filteredTags.every((t) => (STATE.selectedTagIds || []).includes(t.id));
-    selectAllCheckbox.checked = allVisibleSelected;
+    selectAllCheckbox.checked = totalVisible > 0 && filteredTags.every((t) => selectedIds.has(t.id));
   }
+
   updateBulkDownloadButton();
-  if(!filteredTags.length){ tbody.innerHTML='<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>'; renderPagination(0); return; }
-  const start=(STATE.currentPage-1)*STATE.perPage, end=start+STATE.perPage;
-  const page=filteredTags.slice(start,end);
-  tbody.innerHTML=page.map((t,i)=>{
-    const statusClass = t.status==='Active'?'badge-status-active':t.status==='Inactive'?'badge-status-inactive':'badge-status-expired';
+  if(!totalVisible){
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>';
+    renderPagination(0);
+    return;
+  }
+
+  const start = (STATE.currentPage - 1) * STATE.perPage;
+  const page = filteredTags.slice(start, start + STATE.perPage);
+  tbody.innerHTML = page.map((t, i) => {
+    const statusClass = t.status === 'Active' ? 'badge-status-active' : t.status === 'Inactive' ? 'badge-status-inactive' : 'badge-status-expired';
     return `
-    <tr>
-      <td><input type="checkbox" ${((STATE.selectedTagIds || []).includes(t.id)) ? 'checked' : ''} onchange="toggleTagSelection('${t.id}', this.checked)"></td>
-      <td>${start+i+1}</td>
-      <td><code style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ksg-gold)">${t.reference_number}</code></td>
-      <td><strong>${t.full_name}</strong></td>
-      <td>${t.department||'—'}</td>
-      <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category||'—'}</span></td>
-      <td><code style="font-size:0.8rem;font-family:'DM Mono',monospace">${t.id_number}</code></td>
-      <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
-      <td><span class="badge ${statusClass}">${t.status||'Active'}</span></td>
-      <td>
-        <div class="action-btns">
-          <button class="btn btn-icon btn-outline btn-sm" onclick="viewTag('${t.id}')" title="View">👁️</button>
-          <button class="btn btn-icon btn-outline btn-sm" onclick="editTag('${t.id}')" title="Edit">✏️</button>
-          <button class="btn btn-icon btn-outline btn-sm" onclick="reprintTag('${t.id}')" title="Reprint">🖨️</button>
-          <button class="btn btn-icon btn-danger btn-sm" onclick="deleteTag('${t.id}')" title="Delete">🗑️</button>
-        </div>
-      </td>
-    </tr>`;
+      <tr>
+        <td><input type="checkbox" data-tag-id="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} onchange="toggleTagSelection('${t.id}', this.checked)"></td>
+        <td>${start + i + 1}</td>
+        <td><code style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ksg-gold)">${t.reference_number}</code></td>
+        <td><strong>${t.full_name}</strong></td>
+        <td>${t.department || '—'}</td>
+        <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category || '—'}</span></td>
+        <td><code style="font-size:0.8rem;font-family:'DM Mono',monospace">${t.id_number}</code></td>
+        <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
+        <td><span class="badge ${statusClass}">${t.status || 'Active'}</span></td>
+        <td>
+          <div class="action-btns">
+            <button class="btn btn-icon btn-outline btn-sm" onclick="viewTag('${t.id}')" title="View">👁️</button>
+            <button class="btn btn-icon btn-outline btn-sm" onclick="editTag('${t.id}')" title="Edit">✏️</button>
+            <button class="btn btn-icon btn-outline btn-sm" onclick="reprintTag('${t.id}')" title="Reprint">🖨️</button>
+            <button class="btn btn-icon btn-danger btn-sm" onclick="deleteTag('${t.id}')" title="Delete">🗑️</button>
+          </div>
+        </td>
+      </tr>`;
   }).join('');
-  renderPagination(filteredTags.length);
+
+  renderPagination(totalVisible);
 }
 
 function renderPagination(total){
@@ -2195,60 +2237,47 @@ async function downloadSelectedTags(){
     const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const tagWidth = 90;
-    const tagHeight = 56;
-    const margin = 5;
-    const colGap = 3;
-    const rowGap = 8;
-    
-    // Calculate layout: 3 columns
-    const leftX = margin;
-    const middleX = margin + tagWidth + colGap;
-    const rightX = margin + (tagWidth + colGap) * 2;
-    const maxRowsPerPage = Math.floor((pageHeight - margin) / (tagHeight + rowGap));
-    
-    let currentRow = 0;
-    
-    for (let index = 0; index < selectedTags.length; index++) {
-      const tag = selectedTags[index];
-      const columnIndex = index % 3;
-      
-      // Add new page if needed (after every 3rd tag in a full row)
-      if (index > 0 && columnIndex === 0 && currentRow >= maxRowsPerPage - 1) {
-        pdf.addPage();
-        currentRow = 0;
-      }
-      
-      const tempWrap = document.createElement('div');
-      tempWrap.style.position = 'fixed';
-      tempWrap.style.left = '-9999px';
-      tempWrap.style.top = '0';
-      tempWrap.style.width = '526px';
-      tempWrap.style.background = '#ffffff';
-      tempWrap.style.zIndex = '-1';
-      document.body.appendChild(tempWrap);
+    const margin = 8;
+    const colGap = 4;
+    const rowGap = 4;
+    const tagWidth = (pageWidth - margin * 2 - colGap * 2) / 3;
+    const tagHeight = (pageHeight - margin * 2 - rowGap * 2) / 3;
+    const xPositions = [margin, margin + tagWidth + colGap, margin + (tagWidth + colGap) * 2];
+    const yPositions = [margin, margin + tagHeight + rowGap, margin + (tagHeight + rowGap) * 2];
 
-      try {
+    const tempWrap = document.createElement('div');
+    tempWrap.style.position = 'fixed';
+    tempWrap.style.left = '-9999px';
+    tempWrap.style.top = '0';
+    tempWrap.style.width = '526px';
+    tempWrap.style.background = '#ffffff';
+    tempWrap.style.zIndex = '-1';
+    document.body.appendChild(tempWrap);
+
+    try {
+      for (let index = 0; index < selectedTags.length; index++) {
+        const tag = selectedTags[index];
+        const pageIndex = Math.floor(index / 9);
+        const positionIndex = index % 9;
+        const rowIndex = Math.floor(positionIndex / 3);
+        const colIndex = positionIndex % 3;
+
+        if (index > 0 && positionIndex === 0) {
+          pdf.addPage();
+        }
+
         tempWrap.innerHTML = buildTagHTML(tag);
         const tagEl = tempWrap.querySelector('.id-tag');
         if (!tagEl) continue;
-        
+
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const canvas = await captureTagElement(tagEl);
         const imgData = canvas.toDataURL('image/png');
-        
-        const yPos = margin + (currentRow * (tagHeight + rowGap));
-        const xPos = columnIndex === 0 ? leftX : columnIndex === 1 ? middleX : rightX;
-        
-        pdf.addImage(imgData, 'PNG', xPos, yPos, tagWidth, tagHeight);
-        
-        // Move to next row after right column
-        if (columnIndex === 2) {
-          currentRow++;
-        }
-      } finally {
-        tempWrap.remove();
+
+        pdf.addImage(imgData, 'PNG', xPositions[colIndex], yPositions[rowIndex], tagWidth, tagHeight);
       }
+    } finally {
+      tempWrap.remove();
     }
 
     pdf.save(`KSG_Selected_Tags_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -2424,66 +2453,136 @@ function downloadTemplate(){
 }
 
 // ─── DASHBOARD ────────────────────────────────
-function getTagStats(tags = STATE.tags){
+const TAG_CATEGORIES = ['Staff','Intern','Attachee','Visitor','Student','Trainer'];
+
+function summarizeTagData(tags = STATE.tags){
   const now = new Date();
   const todayKey = now.toDateString();
   const month = now.getMonth();
   const year = now.getFullYear();
+
+  const categoryCounts = {};
+  const departmentCounts = {};
+  const dateCounts = {};
   let active = 0;
   let today = 0;
   let thisMonth = 0;
-  const departments = new Set();
 
   tags.forEach(t => {
     if(!t.status || t.status === 'Active') active++;
     const generatedAt = new Date(t.date_generated);
-    if(generatedAt.toDateString() === todayKey) today++;
+    const dateKey = generatedAt.toDateString();
+
+    if(dateKey === todayKey) today++;
     if(generatedAt.getMonth() === month && generatedAt.getFullYear() === year) thisMonth++;
-    if(t.department) departments.add(t.department);
+
+    const category = t.category || 'Unknown';
+    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+
+    if(t.department) {
+      departmentCounts[t.department] = (departmentCounts[t.department] || 0) + 1;
+    }
+
+    dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
   });
 
-  return { total: tags.length, active, today, thisMonth, departments: departments.size };
+  return {
+    total: tags.length,
+    active,
+    today,
+    thisMonth,
+    departments: Object.keys(departmentCounts).length,
+    categoryCounts,
+    departmentCounts,
+    dateCounts,
+  };
+}
+
+function getTagStats(tags = STATE.tags){
+  return summarizeTagData(tags);
 }
 
 function updateDashboard(){
   const stats = getTagStats();
-  document.getElementById('stat-total').textContent=stats.total;
-  document.getElementById('stat-active').textContent=stats.active;
-  document.getElementById('stat-today').textContent=stats.today;
-  document.getElementById('nav-tag-count').textContent=stats.total;
-  // Recent tags
-  const tbody=document.getElementById('recent-tags-body');
-  const recent=STATE.tags.slice(0,5);
-  if(!recent.length){ tbody.innerHTML='<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🏷️</div><p>No tags generated yet</p></div></td></tr>'; }
-  else tbody.innerHTML=recent.map(t=>`<tr><td><strong>${t.full_name}</strong></td><td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category}</span></td><td>${t.department||'—'}</td><td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td></tr>`).join('');
-  // Category chart
-  renderCategoryChart('dash-category-chart');
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-active').textContent = stats.active;
+  document.getElementById('stat-today').textContent = stats.today;
+  document.getElementById('nav-tag-count').textContent = stats.total;
+
+  const tbody = document.getElementById('recent-tags-body');
+  const recent = STATE.tags.slice(0, 5);
+  if(!recent.length){
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🏷️</div><p>No tags generated yet</p></div></td></tr>';
+  } else {
+    tbody.innerHTML = recent.map(t => `
+      <tr>
+        <td><strong>${t.full_name}</strong></td>
+        <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category||'—'}</span></td>
+        <td>${t.department||'—'}</td>
+        <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
+      </tr>
+    `).join('');
+  }
+
+  renderCategoryChart('dash-category-chart', stats.categoryCounts);
 }
 
-function renderCategoryChart(elId){
-  const cats=['Staff','Intern','Attachee','Visitor','Student','Trainer'];
-  const colors=['#1A3A6B','#27AE60','#8E44AD','#B7770D','#2980B9','#922B21'];
-  const counts=cats.map(c=>STATE.tags.filter(t=>t.category===c).length);
-  const max=Math.max(...counts,1);
-  const el=document.getElementById(elId);
-  el.innerHTML=cats.map((c,i)=>`<div class="chart-bar-item"><div class="chart-bar-label">${c}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(counts[i]/max)*100}%;background:${colors[i]}"></div></div><div class="chart-bar-val">${counts[i]}</div></div>`).join('');
+function renderCategoryChart(elId, counts = {}){
+  const cats = TAG_CATEGORIES;
+  const colors = ['#1A3A6B','#27AE60','#8E44AD','#B7770D','#2980B9','#922B21'];
+  const values = cats.map(c => counts[c] || 0);
+  const max = Math.max(...values, 1);
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.innerHTML = cats.map((c, i) => `
+    <div class="chart-bar-item">
+      <div class="chart-bar-label">${c}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(values[i] / max) * 100}%;background:${colors[i]}"></div></div>
+      <div class="chart-bar-val">${values[i]}</div>
+    </div>
+  `).join('');
 }
 
 // ─── REPORTS ──────────────────────────────────
 function renderReports(){
   const stats = getTagStats();
-  renderCategoryChart('rpt-category');
-  // Department chart
-  const depts=[...new Set(STATE.tags.map(t=>t.department||'Unknown'))].slice(0,6);
-  const dColors=['#C9A84C','#1A3A6B','#2ECC71','#E74C3C','#9B59B6','#3498DB'];
-  const maxD=Math.max(...depts.map(d=>STATE.tags.filter(t=>t.department===d).length),1);
-  document.getElementById('rpt-dept').innerHTML=depts.map((d,i)=>{const c=STATE.tags.filter(t=>t.department===d).length; return `<div class="chart-bar-item"><div class="chart-bar-label" style="width:90px;font-size:0.75rem">${d.split(' ')[0]}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(c/maxD)*100}%;background:${dColors[i%dColors.length]}"></div></div><div class="chart-bar-val">${c}</div></div>`;}).join('');
-  // Trend (last 7 days)
-  const days=[...Array(7)].map((_,i)=>{ const d=new Date(); d.setDate(d.getDate()-6+i); return d; });
-  const maxT=Math.max(...days.map(d=>STATE.tags.filter(t=>new Date(t.date_generated).toDateString()===d.toDateString()).length),1);
-  document.getElementById('rpt-trend').innerHTML=days.map(d=>{ const c=STATE.tags.filter(t=>new Date(t.date_generated).toDateString()===d.toDateString()).length; return `<div class="chart-bar-item"><div class="chart-bar-label" style="font-size:0.75rem">${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric'})}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(c/maxT)*100}%;background:var(--ksg-gold)"></div></div><div class="chart-bar-val">${c}</div></div>`; }).join('');
-  // Stats
-  document.getElementById('report-stats').innerHTML=`
+  renderCategoryChart('rpt-category', stats.categoryCounts);
+
+  const deptEntries = Object.entries(stats.departmentCounts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 6);
+  const dColors = ['#C9A84C','#1A3A6B','#2ECC71','#E74C3C','#9B59B6','#3498DB'];
+  const maxD = Math.max(...deptEntries.map(([_, count]) => count), 1);
+  document.getElementById('rpt-dept').innerHTML = deptEntries.map(([dept, count], i) => `
+    <div class="chart-bar-item">
+      <div class="chart-bar-label" style="width:90px;font-size:0.75rem">${dept.split(' ')[0]}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(count / maxD) * 100}%;background:${dColors[i % dColors.length]}"></div></div>
+      <div class="chart-bar-val">${count}</div>
+    </div>
+  `).join('');
+
+  const days = [...Array(7)].map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - 6 + i);
+    return d;
+  });
+
+  const dateCounts = stats.dateCounts;
+  const trendValues = days.map(d => dateCounts[d.toDateString()] || 0);
+  const maxT = Math.max(...trendValues, 1);
+
+  document.getElementById('rpt-trend').innerHTML = days.map((d, i) => {
+    const count = trendValues[i];
+    return `
+      <div class="chart-bar-item">
+        <div class="chart-bar-label" style="font-size:0.75rem">${d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' })}</div>
+        <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(count / maxT) * 100}%;background:var(--ksg-gold)"></div></div>
+        <div class="chart-bar-val">${count}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('report-stats').innerHTML = `
     <div class="stat-card gold"><div class="stat-icon">🏷️</div><div class="stat-value">${stats.total}</div><div class="stat-label">Total Tags</div></div>
     <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">${stats.active}</div><div class="stat-label">Active</div></div>
     <div class="stat-card blue"><div class="stat-icon">🏢</div><div class="stat-value">${stats.departments}</div><div class="stat-label">Departments</div></div>
