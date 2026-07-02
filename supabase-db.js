@@ -3,12 +3,31 @@
  * Maps DB rows ↔ app STATE shape.
  */
 window.KSGDb = (function () {
+  const cache = {
+    tags: null,
+    logs: null,
+    settings: null,
+    timestamp: null
+  };
+  const CACHE_DURATION = 30000; // 30 seconds
+
   function db() {
     return window.KSGSupabase.getClient();
   }
 
   function enabled() {
     return window.KSGSupabase.isConfigured() && !!db();
+  }
+
+  function isCacheValid() {
+    return cache.timestamp && (Date.now() - cache.timestamp < CACHE_DURATION);
+  }
+
+  function invalidateCache() {
+    cache.tags = null;
+    cache.logs = null;
+    cache.settings = null;
+    cache.timestamp = null;
   }
 
   function mapTag(row) {
@@ -95,6 +114,14 @@ window.KSGDb = (function () {
   }
 
   async function loadAll() {
+    if (isCacheValid() && cache.tags && cache.logs && cache.settings) {
+      return {
+        tags: cache.tags,
+        logs: cache.logs,
+        settings: cache.settings
+      };
+    }
+
     const sb = db();
     if (!sb) throw new Error('Supabase not configured');
 
@@ -108,11 +135,19 @@ window.KSGDb = (function () {
     if (logsRes.error) throw logsRes.error;
     if (settingsRes.error) throw settingsRes.error;
 
-    return {
+    const result = {
       tags: (tagsRes.data || []).map(mapTag),
       logs: (logsRes.data || []).map(mapLog),
       settings: mapSettings(settingsRes.data),
     };
+    
+    // Update cache
+    cache.tags = result.tags;
+    cache.logs = result.logs;
+    cache.settings = result.settings;
+    cache.timestamp = Date.now();
+    
+    return result;
   }
 
   async function insertTag(tag, userEmail, userId) {
@@ -123,6 +158,7 @@ window.KSGDb = (function () {
       .select('*')
       .single();
     if (error) throw error;
+    invalidateCache();
     return mapTag(data);
   }
 
@@ -131,6 +167,7 @@ window.KSGDb = (function () {
     const rows = tags.map((t) => tagToRow(t, userEmail, userId));
     const { data, error } = await sb.from('tags').insert(rows).select('*');
     if (error) throw error;
+    invalidateCache();
     return (data || []).map(mapTag);
   }
 
@@ -149,6 +186,7 @@ window.KSGDb = (function () {
       .select('*')
       .single();
     if (error) throw error;
+    invalidateCache();
     return mapTag(data);
   }
 
@@ -156,12 +194,14 @@ window.KSGDb = (function () {
     const sb = db();
     const { error } = await sb.from('tags').delete().eq('id', id);
     if (error) throw error;
+    invalidateCache();
   }
 
   async function deleteAllTags() {
     const sb = db();
     const { error } = await sb.from('tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     if (error) throw error;
+    invalidateCache();
   }
 
   async function insertLog(msg, userEmail, userId, action = 'general') {
@@ -237,5 +277,6 @@ window.KSGDb = (function () {
     getProfile,
     testConnection,
     mapTag,
+    invalidateCache,
   };
 })();

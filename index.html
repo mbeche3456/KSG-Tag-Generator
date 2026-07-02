@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KSG Tag Generator System</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.1/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="supabase-db.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.1/dist/xlsx.full.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
 
@@ -305,14 +305,14 @@
   .modal--wide { width: 700px; }
   .modal-body--centered { display: flex; flex-direction: column; align-items: center; gap: 16px; }
   .modal-actions--centered { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-  .modal--dark { background: #000000; color: #ffffff; }
-  .modal-header--dark { background: #000000; border-bottom-color: #000000; color: #ffffff; }
-  .modal-close--dark { color: #ffffff; }
+  .modal--dark { background: var(--ksg-navy); color: #ffffff; }
+  .modal-header--dark { background: var(--ksg-gold); border-bottom-color: var(--ksg-gold); color: var(--ksg-dark); }
+  .modal-close--dark { color: var(--ksg-dark); }
   .modal-form-group { margin-bottom: 16px; }
-  .modal-form-label--dark { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; color: #ffffff; }
-  .modal-form-input--dark { width: 100%; padding: 10px 13px; border: 1.5px solid var(--ksg-gold); border-radius: 8px; font-size: 0.9rem; outline: none; font-family: 'DM Sans', sans-serif; background: #ffffff; color: #000000; }
-  .modal-form-input--dark:focus { border-color: var(--ksg-gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
-  .modal-footer--dark { border-top-color: #000000; }
+  .modal-form-label--dark { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; color: var(--ksg-gold-light); }
+  .modal-form-input--dark { width: 100%; padding: 10px 13px; border: 2px solid var(--ksg-gold); border-radius: 8px; font-size: 0.9rem; outline: none; font-family: 'DM Sans', sans-serif; background: #000000; color: #ffffff; }
+  .modal-form-input--dark:focus { border-color: var(--ksg-gold-light); box-shadow: 0 0 0 3px rgba(201,168,76,0.2); }
+  .modal-footer--dark { border-top-color: var(--ksg-gold); background: var(--ksg-navy); }
   .modal-copy { font-size: 0.9rem; color: var(--ksg-gray); }
   .modal--compact { width: 400px; }
   .hidden { display: none !important; }
@@ -1477,20 +1477,7 @@ async function doLogin(){
   const pass = document.getElementById('login-pass').value;
   if(!email||!pass){ showAuthAlert('login','Please enter email and password.','error'); return; }
 
-  const stored = localStorage.getItem('ksg_users');
-  const users = stored ? JSON.parse(stored) : [
-    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'},
-    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'superadmin'}
-  ];
-  const localUser = users.find(u=>u.email===email&&u.pass===pass);
-  if(localUser){
-    STATE.user = { ...localUser, id: localUser.id || `local-${Date.now()}` };
-    localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
-    initApp();
-    logActivity(`User logged in: ${email} (${STATE.user.role})`, 'login');
-    return;
-  }
-
+  // Try Supabase first (prioritize Supabase over local)
   if(KSGSupabase.isConfigured()){
     try{
       const sb = KSGSupabase.init();
@@ -1506,6 +1493,21 @@ async function doLogin(){
     }catch(e){
       console.warn('Supabase login unavailable:', e.message);
     }
+  }
+
+  // Fallback to local storage if Supabase not configured or fails
+  const stored = localStorage.getItem('ksg_users');
+  const users = stored ? JSON.parse(stored) : [
+    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin'},
+    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin'}
+  ];
+  const localUser = users.find(u=>u.email===email&&u.pass===pass);
+  if(localUser){
+    STATE.user = { ...localUser, id: localUser.id || `local-${Date.now()}` };
+    localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
+    initApp();
+    logActivity(`User logged in: ${email} (${STATE.user.role})`, 'login');
+    return;
   }
 
   showAuthAlert('login','Invalid email or password.','error');
@@ -1533,8 +1535,8 @@ async function doRegister(){
   }
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [
-    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'superadmin'},
-    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'superadmin'}
+    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin'},
+    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin'}
   ];
   if(users.find(u=>u.email===email)){ showAuthAlert('reg','Email already registered.','error'); return; }
   users.push({email,pass,name,role});
@@ -1828,6 +1830,11 @@ async function getTemplateDataUrl(){
 
 async function saveTagOnly(){
   if(!validateForm()) return;
+  const saveBtn = document.querySelector('#page-generate .btn-gold');
+  if(saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = '⏳ Saving...';
+  }
   try{
     const saved = await persistCurrentTag();
     updateTagPreviewInit();
@@ -1837,6 +1844,11 @@ async function saveTagOnly(){
   }catch(e){
     toast('Failed to save tag: ' + (e.message || 'Unknown error'), 'error');
     console.error(e);
+  } finally {
+    if(saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = '💾 Save Tag';
+    }
   }
 }
 
@@ -1845,6 +1857,13 @@ async function generateTagPDF(){
   const ref = currentRef;
   const el = document.getElementById('id-tag');
   if(!el){ toast('Tag preview not found.', 'error'); return; }
+  
+  const pdfBtn = document.querySelector('button[onclick="generateTagPDF()"]');
+  if(pdfBtn) {
+    pdfBtn.disabled = true;
+    pdfBtn.textContent = '⏳ Generating...';
+  }
+  
   try{
     const canvas = await exportTagCanvas(el);
     const JsPDF = getJsPDF();
@@ -1867,6 +1886,11 @@ async function generateTagPDF(){
   }catch(e){
     toast('PDF generation failed: ' + (e.message || 'Unknown error'), 'error');
     console.error(e);
+  } finally {
+    if(pdfBtn) {
+      pdfBtn.disabled = false;
+      pdfBtn.textContent = '📄 Download PDF';
+    }
   }
 }
 
@@ -2059,7 +2083,7 @@ function filterTags(search){
     manageRenderHandle = 0;
     STATE.currentPage=1;
     renderManageTable();
-  }, 40);
+  }, 150);
 }
 
 function renderManageTable(){
@@ -2070,8 +2094,11 @@ function renderManageTable(){
 
   const selectedIds = new Set(STATE.selectedTagIds || []);
   const totalVisible = filteredTags.length;
-  document.getElementById('table-count').textContent = `${totalVisible} record${totalVisible !== 1 ? 's' : ''}`;
-  document.getElementById('nav-tag-count').textContent = STATE.tags.length;
+  const tableCountEl = document.getElementById('table-count');
+  const navTagCountEl = document.getElementById('nav-tag-count');
+  
+  if(tableCountEl) tableCountEl.textContent = `${totalVisible} record${totalVisible !== 1 ? 's' : ''}`;
+  if(navTagCountEl) navTagCountEl.textContent = STATE.tags.length;
 
   const selectAllCheckbox = document.getElementById('select-all-visible');
   if(selectAllCheckbox){
@@ -2087,9 +2114,15 @@ function renderManageTable(){
 
   const start = (STATE.currentPage - 1) * STATE.perPage;
   const page = filteredTags.slice(start, start + STATE.perPage);
-  tbody.innerHTML = page.map((t, i) => {
+  
+  const fragment = document.createDocumentFragment();
+  const tempDiv = document.createElement('div');
+  
+  let html = '';
+  for(let i = 0; i < page.length; i++){
+    const t = page[i];
     const statusClass = t.status === 'Active' ? 'badge-status-active' : t.status === 'Inactive' ? 'badge-status-inactive' : 'badge-status-expired';
-    return `
+    html += `
       <tr>
         <td><input type="checkbox" data-tag-id="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} onchange="toggleTagSelection('${t.id}', this.checked)"></td>
         <td>${start + i + 1}</td>
@@ -2109,8 +2142,9 @@ function renderManageTable(){
           </div>
         </td>
       </tr>`;
-  }).join('');
-
+  }
+  
+  tbody.innerHTML = html;
   renderPagination(totalVisible);
 }
 
@@ -2845,22 +2879,11 @@ if(KSGSupabase.isConfigured()) KSGSupabase.init(sbUrl, sbKey);
 // Mandatory Login: Users must always log in
 (async function bootAuth(){
   // Force login - no auto-login from stored session
-  // Users must explicitly log in every time
+  // Users must explicitly log in every time (including superadmin)
   STATE.user = null;
   localStorage.removeItem('ksg_user');
   
-  // Only auto-login if Supabase session is active
-  if(KSGSupabase.isConnected()){
-    try{
-      const { data: { session } } = await KSGSupabase.getClient().auth.getSession();
-      if(session?.user){
-        await setUserFromSession(session.user);
-        initApp();
-        return;
-      }
-    }catch(e){}
-  }
-  // Show auth screen - login is required
+  // Show auth screen - login is required for everyone
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app').style.display='none';
 })();

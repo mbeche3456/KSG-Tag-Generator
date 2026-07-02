@@ -94,11 +94,13 @@ alter table public.activity_logs enable row level security;
 alter table public.app_settings enable row level security;
 
 -- Profiles: users read/update own row; all authenticated can read (for display)
+drop policy if exists "profiles_select_authenticated" on public.profiles;
 create policy "profiles_select_authenticated"
   on public.profiles for select
   to authenticated
   using (true);
 
+drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
   on public.profiles for update
   to authenticated
@@ -106,38 +108,45 @@ create policy "profiles_update_own"
   with check (auth.uid() = id);
 
 -- Tags: full CRUD for authenticated users
+drop policy if exists "tags_select_authenticated" on public.tags;
 create policy "tags_select_authenticated"
   on public.tags for select
   to authenticated
   using (true);
 
+drop policy if exists "tags_insert_authenticated" on public.tags;
 create policy "tags_insert_authenticated"
   on public.tags for insert
   to authenticated
   with check (true);
 
+drop policy if exists "tags_update_authenticated" on public.tags;
 create policy "tags_update_authenticated"
   on public.tags for update
   to authenticated
   using (true)
   with check (true);
 
+drop policy if exists "tags_delete_authenticated" on public.tags;
 create policy "tags_delete_authenticated"
   on public.tags for delete
   to authenticated
   using (true);
 
 -- Activity logs (Superadmin only for delete)
+drop policy if exists "logs_select_authenticated" on public.activity_logs;
 create policy "logs_select_authenticated"
   on public.activity_logs for select
   to authenticated
   using (true);
 
+drop policy if exists "logs_insert_authenticated" on public.activity_logs;
 create policy "logs_insert_authenticated"
   on public.activity_logs for insert
   to authenticated
   with check (true);
 
+drop policy if exists "logs_delete_superadmin_only" on public.activity_logs;
 create policy "logs_delete_superadmin_only"
   on public.activity_logs for delete
   to authenticated
@@ -148,16 +157,19 @@ create policy "logs_delete_superadmin_only"
   );
 
 -- App settings (shared org config)
+drop policy if exists "settings_select_authenticated" on public.app_settings;
 create policy "settings_select_authenticated"
   on public.app_settings for select
   to authenticated
   using (true);
 
+drop policy if exists "settings_upsert_authenticated" on public.app_settings;
 create policy "settings_upsert_authenticated"
   on public.app_settings for insert
   to authenticated
   with check (true);
 
+drop policy if exists "settings_update_authenticated" on public.app_settings;
 create policy "settings_update_authenticated"
   on public.app_settings for update
   to authenticated
