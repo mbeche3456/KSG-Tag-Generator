@@ -1712,25 +1712,72 @@ async function persistCurrentTag(){
   return { tag: STATE.tags[0], ref, name: tag.full_name };
 }
 
+async function getTemplateDataUrl(){
+  try{
+    const response = await fetch('template.png', { cache: 'no-store' });
+    if(!response.ok) throw new Error('Template image could not be loaded.');
+    const blob = await response.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Template image read failed.'));
+      reader.readAsDataURL(blob);
+    });
+  }catch(e){
+    console.warn('Word export fallback: template image unavailable.', e.message);
+    return '';
+  }
+}
+
 async function generateTagWord(){
   if(!validateForm()) return;
   const ref = currentRef;
   const data = getTagFormData();
   try{
+    const templateDataUrl = await getTemplateDataUrl();
+    const preview = document.getElementById('id-tag');
+    const fields = ['pt-orgname','pt-name','pt-position','pt-dept','pt-ref','pt-date'];
+    const renderStyles = {};
+    fields.forEach((id) => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      const cs = getComputedStyle(el);
+      renderStyles[id] = {
+        text: (el.textContent || '').trim(),
+        top: cs.top || '0px',
+        left: cs.left || '0px',
+        fontFamily: cs.fontFamily || 'Arial',
+        fontSize: cs.fontSize || '16px',
+        fontWeight: cs.fontWeight || '400',
+        letterSpacing: cs.letterSpacing || '0px',
+        color: cs.color || '#000000',
+        textTransform: cs.textTransform || 'none',
+        whiteSpace: cs.whiteSpace || 'nowrap',
+      };
+    });
+
     const content = `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
     <title>KSG Tag ${ref}</title>
+    <style>
+      body { margin:0; padding:24px; font-family: Arial, sans-serif; background:#f5f5f5; }
+      .doc-page { width: 526px; height: 325px; margin: 0 auto; position: relative; overflow: hidden; background: #fff; box-shadow: 0 4px 16px rgba(0,0,0,0.14); }
+      .doc-page .tag-bg { position:absolute; inset:0; width:100%; height:100%; background-repeat:no-repeat; background-size:100% 100%; background-position:center; ${templateDataUrl ? `background-image:url('${templateDataUrl}');` : ''} }
+      .doc-text { position:absolute; z-index:2; line-height:1.1; display:block; }
+    </style>
   </head>
-  <body style="font-family: Arial, sans-serif; padding: 24px; color: #0A1628;">
-    <h1 style="margin: 0 0 12px; color: #C9A84C;">KENYA SCHOOL OF GOVERNMENT</h1>
-    <h2 style="margin: 0 0 16px;">Identification Tag</h2>
-    <p style="margin: 8px 0;"><strong>Name:</strong> ${data.full_name || '—'}</p>
-    <p style="margin: 8px 0;"><strong>Department:</strong> ${data.department || '—'}</p>
-    <p style="margin: 8px 0;"><strong>Category:</strong> ${data.category || '—'}</p>
-    <p style="margin: 8px 0;"><strong>Reference:</strong> ${ref}</p>
-    <p style="margin: 8px 0;"><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</p>
+  <body>
+    <div class="doc-page">
+      <div class="tag-bg"></div>
+      <div class="doc-text" style="top:${renderStyles['pt-orgname'].top}; left:${renderStyles['pt-orgname'].left}; font-family:${renderStyles['pt-orgname'].fontFamily}; font-size:${renderStyles['pt-orgname'].fontSize}; font-weight:${renderStyles['pt-orgname'].fontWeight}; letter-spacing:${renderStyles['pt-orgname'].letterSpacing}; color:${renderStyles['pt-orgname'].color}; text-transform:${renderStyles['pt-orgname'].textTransform}; white-space:${renderStyles['pt-orgname'].whiteSpace};">${renderStyles['pt-orgname'].text}</div>
+      <div class="doc-text" style="top:${renderStyles['pt-name'].top}; left:${renderStyles['pt-name'].left}; font-family:${renderStyles['pt-name'].fontFamily}; font-size:${renderStyles['pt-name'].fontSize}; font-weight:${renderStyles['pt-name'].fontWeight}; letter-spacing:${renderStyles['pt-name'].letterSpacing}; color:${renderStyles['pt-name'].color}; text-transform:${renderStyles['pt-name'].textTransform}; white-space:${renderStyles['pt-name'].whiteSpace};">${renderStyles['pt-name'].text}</div>
+      <div class="doc-text" style="top:${renderStyles['pt-position'].top}; left:${renderStyles['pt-position'].left}; font-family:${renderStyles['pt-position'].fontFamily}; font-size:${renderStyles['pt-position'].fontSize}; font-weight:${renderStyles['pt-position'].fontWeight}; letter-spacing:${renderStyles['pt-position'].letterSpacing}; color:${renderStyles['pt-position'].color}; text-transform:${renderStyles['pt-position'].textTransform}; white-space:${renderStyles['pt-position'].whiteSpace};">${renderStyles['pt-position'].text}</div>
+      <div class="doc-text" style="top:${renderStyles['pt-dept'].top}; left:${renderStyles['pt-dept'].left}; font-family:${renderStyles['pt-dept'].fontFamily}; font-size:${renderStyles['pt-dept'].fontSize}; font-weight:${renderStyles['pt-dept'].fontWeight}; letter-spacing:${renderStyles['pt-dept'].letterSpacing}; color:${renderStyles['pt-dept'].color}; text-transform:${renderStyles['pt-dept'].textTransform}; white-space:${renderStyles['pt-dept'].whiteSpace};">${renderStyles['pt-dept'].text}</div>
+      <div class="doc-text" style="top:${renderStyles['pt-ref'].top}; left:${renderStyles['pt-ref'].left}; font-family:${renderStyles['pt-ref'].fontFamily}; font-size:${renderStyles['pt-ref'].fontSize}; font-weight:${renderStyles['pt-ref'].fontWeight}; letter-spacing:${renderStyles['pt-ref'].letterSpacing}; color:${renderStyles['pt-ref'].color}; text-transform:${renderStyles['pt-ref'].textTransform}; white-space:${renderStyles['pt-ref'].whiteSpace};">${renderStyles['pt-ref'].text}</div>
+      <div class="doc-text" style="top:${renderStyles['pt-date'].top}; left:${renderStyles['pt-date'].left}; font-family:${renderStyles['pt-date'].fontFamily}; font-size:${renderStyles['pt-date'].fontSize}; font-weight:${renderStyles['pt-date'].fontWeight}; letter-spacing:${renderStyles['pt-date'].letterSpacing}; color:${renderStyles['pt-date'].color}; text-transform:${renderStyles['pt-date'].textTransform}; white-space:${renderStyles['pt-date'].whiteSpace};">${renderStyles['pt-date'].text}</div>
+    </div>
   </body>
 </html>`;
 
