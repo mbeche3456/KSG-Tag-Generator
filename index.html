@@ -309,10 +309,11 @@
   .modal-header--dark { background: var(--ksg-gold); border-bottom-color: var(--ksg-gold); color: var(--ksg-dark); }
   .modal-close--dark { color: var(--ksg-dark); }
   .modal-form-group { margin-bottom: 16px; }
-  .modal-form-label--dark { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; color: var(--ksg-gold-light); }
+  .modal-form-label--dark { font-size: 0.82rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; color: var(--ksg-gold); }
   .modal-form-input--dark { width: 100%; padding: 10px 13px; border: 2px solid var(--ksg-gold); border-radius: 8px; font-size: 0.9rem; outline: none; font-family: 'DM Sans', sans-serif; background: #000000; color: #ffffff; }
   .modal-form-input--dark:focus { border-color: var(--ksg-gold-light); box-shadow: 0 0 0 3px rgba(201,168,76,0.2); }
   .modal-footer--dark { border-top-color: var(--ksg-gold); background: var(--ksg-navy); }
+  .modal--dark .modal-body { background: #000000; }
   .modal-copy { font-size: 0.9rem; color: var(--ksg-gray); }
   .modal--compact { width: 400px; }
   .hidden { display: none !important; }
@@ -762,17 +763,11 @@
         <input type="email" id="reg-email" placeholder="admin@ksg.go.ke">
       </div>
       <div class="form-group">
-        <label>Role</label>
-        <select id="reg-role">
-          <option value="admin">Admin</option>
-          <option value="superadmin">Super Admin</option>
-        </select>
-      </div>
-      <div class="form-group">
         <label>Password</label>
         <input type="password" id="reg-pass" placeholder="Min 8 characters">
       </div>
-      <button class="btn-primary" onclick="doRegister()">Create Account</button>
+      <button class="btn-primary" onclick="doRegister()">Request Account</button>
+      <p class="auth-note">Your account will be pending approval by a superadmin.</p>
     </div>
 
     <!-- RESET -->
@@ -955,7 +950,7 @@
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="modal-form-label--dark">Category *</label>
+                    <label class="modal-form-label--dark">Category</label>
                     <select id="f-cat" onchange="updatePreview()" class="modal-form-input--dark">
                       <option value="">Select Category</option>
                       <option value="Staff">Staff</option>
@@ -975,8 +970,7 @@
                 </div>
                 <div class="form-actions">
                   <button class="btn btn-success" onclick="saveTagOnly()">💾 Save Tag</button>
-                  <button class="btn btn-gold" onclick="generateTagPDF()">📄 Generate PDF</button>
-                  <button class="btn btn-dark" onclick="generateTagPNG()">🖼️ Generate PNG</button>
+                  <button class="btn btn-gold" onclick="generateTagPDF()">📄 Download PDF</button>
                   <button class="btn btn-outline" onclick="clearForm()">✕ Clear</button>
                 </div>
 
@@ -987,7 +981,6 @@
                     <select id="sp-target" class="style-panel-select style-panel-select--compact">
                       <option value="pt-name">Full Name</option>
                       <option value="pt-dept">Department</option>
-                      <option value="pt-position">Category</option>
                       <option value="pt-orgname">Institution</option>
                     </select>
                   </div>
@@ -1037,7 +1030,7 @@
                       <div class="tag-ksg"><img src="about:blank" id="pt-ksg-img" alt="KSG Logo"></div>
                       <div class="tag-org-name" id="pt-orgname">KENYA SCHOOL OF GOVERNMENT</div>
                       <div class="tag-name" id="pt-name">ROY MBECHE</div>
-                      <div class="tag-position" id="pt-position">ATTACHEE</div>
+                      <div class="tag-position" id="pt-position"></div>
                       <div class="tag-dept" id="pt-dept">ICT</div>
                       <div class="tag-meta-strip">
                         <span class="tag-ref" id="pt-ref">KSG-REF-0000</span>
@@ -1047,8 +1040,7 @@
                   </div>
                 </div>
                 <div class="preview-actions">
-                  <button class="btn btn-gold btn-sm" onclick="generateTagPDF()">📄 Generate PDF</button>
-                  <button class="btn btn-dark btn-sm" onclick="generateTagPNG()">🖼️ Generate PNG</button>
+                  <button class="btn btn-gold btn-sm" onclick="generateTagPDF()">📄 Download PDF</button>
                 </div>
               </div>
             </div>
@@ -1251,6 +1243,39 @@
                 <button class="btn btn-danger btn-sm settings-action-btn" onclick="clearAllData()">🗑️ Clear All Data</button>
               </div>
             </div>
+            <div class="settings-card card" id="user-management-card" style="display:none;">
+              <div class="card-header"><span class="card-title">User Management</span></div>
+              <div class="settings-form">
+                <p class="settings-copy">Approve or reject pending user registrations.</p>
+                <button class="btn btn-outline btn-sm settings-action-btn" onclick="loadPendingUsers()">🔄 Refresh</button>
+                <div id="pending-users-list" style="margin-top:12px;"></div>
+                
+                <hr style="margin:20px 0;border:0;border-top:1px solid #e5e7eb;">
+                
+                <h4 style="margin-bottom:12px;font-size:14px;">Create New User</h4>
+                <div class="form-group">
+                  <label>Full Name</label>
+                  <input type="text" id="manual-reg-name" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                  <label>Email Address</label>
+                  <input type="email" id="manual-reg-email" placeholder="user@ksg.go.ke">
+                </div>
+                <div class="form-group">
+                  <label>Password</label>
+                  <input type="password" id="manual-reg-pass" placeholder="Min 8 characters">
+                </div>
+                <div class="form-group">
+                  <label>Role</label>
+                  <select id="manual-reg-role">
+                    <option value="admin">Admin</option>
+                    <option value="staff">Staff</option>
+                    <option value="superadmin">Super Admin</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="createUserManual()">Create User</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1354,6 +1379,7 @@
     </div>
     <div class="modal-footer modal-footer--dark">
       <button class="btn btn-outline" onclick="closeModal('modal-edit')">Cancel</button>
+      <button class="btn btn-gold" onclick="downloadEditPDF()">📄 Download PDF</button>
       <button class="btn btn-gold" onclick="saveEdit()">💾 Save Changes</button>
     </div>
   </div>
@@ -1466,10 +1492,18 @@ function load(){
 
 // ─── AUTH ─────────────────────────────────────
 function switchAuthTab(tab){
-  // Login should always remain the active auth page.
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active', i===0));
+  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));
-  document.getElementById('form-login').classList.add('active');
+  
+  if(tab === 'login'){
+    document.querySelectorAll('.auth-tab')[0].classList.add('active');
+    document.getElementById('form-login').classList.add('active');
+  } else if(tab === 'register'){
+    document.querySelectorAll('.auth-tab')[1].classList.add('active');
+    document.getElementById('form-register').classList.add('active');
+  } else if(tab === 'reset'){
+    document.getElementById('form-reset').classList.add('active');
+  }
 }
 
 async function doLogin(){
@@ -1484,6 +1518,12 @@ async function doLogin(){
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
       if(!error && data?.user){
         await setUserFromSession(data.user);
+        // Check if user status is active
+        if(STATE.user.status !== 'active'){
+          await sb.auth.signOut();
+          showAuthAlert('login','Your account is pending approval. Please wait for a superadmin to approve your account.','error');
+          return;
+        }
         initApp();
         return;
       }
@@ -1498,11 +1538,15 @@ async function doLogin(){
   // Fallback to local storage if Supabase not configured or fails
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [
-    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin'},
-    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin'}
+    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin',status:'active'},
+    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin',status:'active'}
   ];
   const localUser = users.find(u=>u.email===email&&u.pass===pass);
   if(localUser){
+    if(localUser.status !== 'active'){
+      showAuthAlert('login','Your account is pending approval. Please wait for a superadmin to approve your account.','error');
+      return;
+    }
     STATE.user = { ...localUser, id: localUser.id || `local-${Date.now()}` };
     localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
     initApp();
@@ -1517,32 +1561,51 @@ async function doRegister(){
   const name=document.getElementById('reg-name').value.trim();
   const email=document.getElementById('reg-email').value.trim();
   const pass=document.getElementById('reg-pass').value;
-  const role=document.getElementById('reg-role').value;
   if(!name||!email||!pass){ showAuthAlert('reg','All fields are required.','error'); return; }
   if(pass.length<8){ showAuthAlert('reg','Password must be at least 8 characters.','error'); return; }
   if(KSGSupabase.isConfigured()){
     try{
       const sb = KSGSupabase.init();
-      const { error } = await sb.auth.signUp({
-        email, password: pass,
-        options: { data: { full_name: name, role } }
+      const { data, error } = await sb.auth.signUp({
+        email, 
+        password: pass,
+        options: { 
+          data: { full_name: name, role: 'admin' },
+          emailRedirectTo: window.location.href
+        }
       });
-      if(error){ showAuthAlert('reg', error.message, 'error'); return; }
-      showAuthAlert('reg','Account created! Check your email if confirmation is enabled, then sign in.','success');
-      setTimeout(()=>switchAuthTab('login'),2000);
+      if(error){ 
+        // Handle rate limit error specifically
+        if(error.message && error.message.includes('rate limit')) {
+          showAuthAlert('reg','Email rate limit exceeded. Please try again later or contact a superadmin to create your account manually.','error');
+        } else {
+          showAuthAlert('reg', error.message, 'error'); 
+        }
+        return; 
+      }
+      // Check if email confirmation is required
+      if(data.user && !data.user.email_confirmed_at) {
+        showAuthAlert('reg','Registration successful! Please check your email to confirm your account. After confirmation, wait for superadmin approval.','success');
+      } else {
+        showAuthAlert('reg','Account request submitted! A superadmin will review and approve your account.','success');
+      }
+      setTimeout(()=>switchAuthTab('login'),4000);
       return;
-    }catch(e){ showAuthAlert('reg', e.message||'Registration failed.', 'error'); return; }
+    }catch(e){ 
+      showAuthAlert('reg', e.message||'Registration failed.', 'error'); 
+      return; 
+    }
   }
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [
-    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin'},
-    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin'}
+    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin',status:'active'},
+    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin',status:'active'}
   ];
   if(users.find(u=>u.email===email)){ showAuthAlert('reg','Email already registered.','error'); return; }
-  users.push({email,pass,name,role});
+  users.push({email,pass,name,role:'admin',status:'pending'});
   localStorage.setItem('ksg_users', JSON.stringify(users));
-  showAuthAlert('reg','Account created! You can now sign in.','success');
-  setTimeout(()=>switchAuthTab('login'),1500);
+  showAuthAlert('reg','Account request submitted! A superadmin will review and approve your account.','success');
+  setTimeout(()=>switchAuthTab('login'),3000);
 }
 
 async function doReset(){
@@ -1567,8 +1630,18 @@ async function setUserFromSession(authUser){
     email: authUser.email,
     name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email.split('@')[0],
     role: profile?.role || authUser.user_metadata?.role || 'admin',
+    status: profile?.status || 'active',
   };
   localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
+  
+  // Show user management card for superadmins
+  const userMgmtCard = document.getElementById('user-management-card');
+  if(userMgmtCard){
+    userMgmtCard.style.display = STATE.user.role === 'superadmin' ? 'block' : 'none';
+    if(STATE.user.role === 'superadmin'){
+      loadPendingUsers();
+    }
+  }
 }
 
 function showAuthAlert(form,msg,type){
@@ -1685,7 +1758,20 @@ function updatePreview(){
 
     ptName.textContent = name.toUpperCase();
     ptDept.textContent = dept.toUpperCase();
-    ptPos.textContent = (pos || cat || 'POSITION / ROLE').toUpperCase();
+    
+    if (cat) {
+      ptPos.textContent = cat.toUpperCase();
+      ptPos.style.display = 'block';
+      // Adjust positions when category is present
+      ptName.style.top = '183px';
+      ptDept.style.top = '269px';
+    } else {
+      ptPos.textContent = '';
+      ptPos.style.display = 'none';
+      // Adjust positions when category is NOT present
+      ptName.style.top = '195px';
+      ptDept.style.top = '249px';
+    }
   });
 }
 
@@ -1709,8 +1795,8 @@ function getTagFormData(){
     reference_number: currentRef,
     full_name,
     department,
-    position,
     category,
+    position,
     id_number,
     status: document.getElementById('f-status').value || 'Active',
     date_generated: new Date().toISOString(),
@@ -1723,8 +1809,7 @@ function validateForm(){
   let ok=true;
   const fields=[
     {id:'f-name',err:'err-name',msg:'Full name is required'},
-    {id:'f-dept',err:'err-dept',msg:'Department is required'},
-    {id:'f-cat',err:'err-cat',msg:'Category is required'}
+    {id:'f-dept',err:'err-dept',msg:'Department is required'}
   ];
   
   fields.forEach(f=>{
@@ -1798,8 +1883,12 @@ async function persistCurrentTag(){
   const ref = data.reference_number;
   const tag={ ...data };
   if(KSGDb.enabled()){
+    // Remove id field to let Supabase auto-generate UUID
+    delete tag.id;
     const saved = await KSGDb.insertTag(tag, STATE.user?.email, STATE.user?.id);
     STATE.tags.unshift(saved);
+    // Reload from Supabase to ensure all admins see the same data
+    await loadFromSupabase();
   } else {
     tag.id = Date.now();
     STATE.tags.unshift(tag);
@@ -1863,6 +1952,9 @@ async function generateTagPDF(){
     pdfBtn.disabled = true;
     pdfBtn.textContent = '⏳ Generating...';
   }
+  
+  // Update preview to ensure correct category positioning
+  updatePreview();
   
   try{
     const canvas = await exportTagCanvas(el);
@@ -2129,7 +2221,7 @@ function renderManageTable(){
         <td><code style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ksg-gold)">${t.reference_number}</code></td>
         <td><strong>${t.full_name}</strong></td>
         <td>${t.department || '—'}</td>
-        <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category || '—'}</span></td>
+        <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category || ''}</span></td>
         <td><code style="font-size:0.8rem;font-family:'DM Mono',monospace">${t.id_number}</code></td>
         <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
         <td><span class="badge ${statusClass}">${t.status || 'Active'}</span></td>
@@ -2168,15 +2260,20 @@ function viewTag(id){
 }
 
 function buildTagHTML(t){
+  const hasCategory = !!t.category;
+  const nameTop = hasCategory ? '183px' : '195px';
+  const deptTop = hasCategory ? '269px' : '249px';
+  const categoryHtml = hasCategory ? `<div class="tag-position">${t.category.toUpperCase()}</div>` : '';
+  
   return `<div class="id-tag">
     <div>${WAVE_SVG_MARKUP}</div>
     <div class="tag-content">
       <div class="tag-coa"><img src="${COA_LOGO}" alt="Kenya Coat of Arms"></div>
       <div class="tag-ksg"><img src="${KSG_LOGO}" alt="KSG Logo"></div>
       <div class="tag-org-name">${(STATE.settings.org||'KENYA SCHOOL OF GOVERNMENT').toUpperCase()}</div>
-      <div class="tag-name">${(t.full_name||'').toUpperCase()}</div>
-      <div class="tag-position">${(t.position||t.category||'—').toUpperCase()}</div>
-      <div class="tag-dept">${(t.department||'—').toUpperCase()}</div>
+      <div class="tag-name" style="top: ${nameTop} !important">${(t.full_name||'').toUpperCase()}</div>
+      ${categoryHtml}
+      <div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>
       <div class="tag-meta-strip">
         <span class="tag-ref">${t.reference_number}</span>
         <span class="tag-date">${new Date(t.date_generated).toLocaleDateString('en-GB')}</span>
@@ -2218,6 +2315,8 @@ async function saveEdit(){
   
   try {
     if(KSGDb.enabled()) await KSGDb.updateTag(t);
+    // Reload from Supabase to ensure all admins see the same data
+    await loadFromSupabase();
     saveLocal();
     refreshTagDataViews();
     logActivity(`Tag edited: ${oldName} → ${t.full_name} (${t.reference_number}) - Status: ${t.status}`, 'tag_edited');
@@ -2228,6 +2327,64 @@ async function saveEdit(){
   }
 }
 
+async function downloadEditPDF(){
+  const idEl = document.getElementById('edit-id');
+  const nameEl = document.getElementById('edit-name');
+  const deptEl = document.getElementById('edit-dept');
+  const posEl = document.getElementById('edit-pos');
+  const statusEl = document.getElementById('edit-status');
+  
+  if (!idEl || !nameEl || !deptEl || !posEl || !statusEl) return;
+  
+  const id = idEl.value;
+  const t = STATE.tags.find(x => x.id == id);
+  if (!t) return;
+  
+  // Create temporary tag object with edited values
+  const tempTag = { ...t };
+  tempTag.full_name = nameEl.value;
+  tempTag.department = deptEl.value;
+  tempTag.position = posEl.value;
+  tempTag.status = statusEl.value;
+  
+  try {
+    const tempWrap = document.createElement('div');
+    tempWrap.style.position = 'fixed';
+    tempWrap.style.left = '-9999px';
+    tempWrap.style.top = '0';
+    tempWrap.style.width = '526px';
+    tempWrap.style.background = '#ffffff';
+    tempWrap.style.zIndex = '-1';
+    document.body.appendChild(tempWrap);
+    
+    tempWrap.innerHTML = buildTagHTML(tempTag);
+    const tagEl = tempWrap.querySelector('.id-tag');
+    if (!tagEl) {
+      document.body.removeChild(tempWrap);
+      toast('Failed to generate tag preview.', 'error');
+      return;
+    }
+    
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const canvas = await captureTagElement(tagEl);
+    document.body.removeChild(tempWrap);
+    
+    const JsPDF = getJsPDF();
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const imgW = 86;
+    const imgH = (canvas.height / canvas.width) * imgW;
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pw - imgW) / 2, (ph - imgH) / 2, imgW, imgH);
+    pdf.save(`KSG-Tag-${tempTag.reference_number}.pdf`);
+    
+    toast('PDF downloaded successfully!', 'success');
+  } catch(e) {
+    toast('Failed to generate PDF: ' + (e.message || 'Unknown error'), 'error');
+    console.error(e);
+  }
+}
+
 function deleteTag(id){ STATE.deleteTarget=id; document.getElementById('modal-delete').classList.add('open'); }
 
 async function confirmDelete(){
@@ -2235,6 +2392,8 @@ async function confirmDelete(){
   const t=STATE.tags.find(x=>x.id==id);
   try{
     if(KSGDb.enabled()) await KSGDb.deleteTag(id);
+    // Reload from Supabase to ensure all admins see the same data
+    if(KSGDb.enabled()) await loadFromSupabase();
     STATE.tags=STATE.tags.filter(x=>x.id!=id);
     saveLocal(); refreshTagDataViews();
     if(t) logActivity(`Tag deleted: ${t.full_name} (${t.reference_number}) - Category: ${t.category}`, 'tag_deleted');
@@ -2271,14 +2430,13 @@ async function downloadSelectedTags(){
     const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 8;
-    const colGap = 4;
-    const rowGap = 4;
-    const tagWidth = (pageWidth - margin * 2 - colGap * 2) / 3;
-    const tagHeight = (pageHeight - margin * 2 - rowGap * 2) / 3;
-    const xPositions = [margin, margin + tagWidth + colGap, margin + (tagWidth + colGap) * 2];
-    const yPositions = [margin, margin + tagHeight + rowGap, margin + (tagHeight + rowGap) * 2];
-
+    const margin = 10;
+    const colGap = 5;
+    const rowGap = 5;
+    const imgW = 86;
+    
+    const xPositions = [margin, margin + imgW + colGap, margin + (imgW + colGap) * 2];
+    
     const tempWrap = document.createElement('div');
     tempWrap.style.position = 'fixed';
     tempWrap.style.left = '-9999px';
@@ -2289,6 +2447,8 @@ async function downloadSelectedTags(){
     document.body.appendChild(tempWrap);
 
     try {
+      let canvasHeight = 0;
+      
       for (let index = 0; index < selectedTags.length; index++) {
         const tag = selectedTags[index];
         const pageIndex = Math.floor(index / 9);
@@ -2307,8 +2467,15 @@ async function downloadSelectedTags(){
         await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const canvas = await captureTagElement(tagEl);
         const imgData = canvas.toDataURL('image/png');
+        
+        if (canvasHeight === 0) {
+          canvasHeight = (canvas.height / canvas.width) * imgW;
+        }
+        
+        const imgH = canvasHeight;
+        const yPositions = [margin, margin + imgH + rowGap, margin + (imgH + rowGap) * 2];
 
-        pdf.addImage(imgData, 'PNG', xPositions[colIndex], yPositions[rowIndex], tagWidth, tagHeight);
+        pdf.addImage(imgData, 'PNG', xPositions[colIndex], yPositions[rowIndex], imgW, imgH);
       }
     } finally {
       tempWrap.remove();
@@ -2464,10 +2631,10 @@ function generateBulk(){
     const p=getBulkRowValue(row, ['position']);
     const cat=getBulkRowValue(row, ['category']);
     const id=getBulkRowValue(row, ['id_number','id number','id']);
-    if(n&&d&&cat){
+    if(n&&d){
       const generatedId = id || `${Date.now()}-${i}`;
       if(!STATE.settings.dup||!STATE.tags.find(t=>t.id_number===generatedId)){
-        const tag={reference_number:genRef(),full_name:n,department:d,position:p,category:cat,id_number:generatedId,status:'Active',date_generated:new Date().toISOString(),created_by:STATE.user.email};
+        const tag={reference_number:genRef(),full_name:n,department:d,position:p,category:cat||'',id_number:generatedId,status:'Active',date_generated:new Date().toISOString(),created_by:STATE.user.email};
         if(!KSGDb.enabled()) tag.id=Date.now()+i;
         batch.push(tag);
         gen++;
@@ -2551,7 +2718,7 @@ function updateDashboard(){
     tbody.innerHTML = recent.map(t => `
       <tr>
         <td><strong>${t.full_name}</strong></td>
-        <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category||'—'}</span></td>
+        <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category||''}</span></td>
         <td>${t.department||'—'}</td>
         <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
       </tr>
@@ -2844,6 +3011,129 @@ async function clearAllData(){
   }catch(e){ toast('Failed to clear data: '+e.message, 'error'); }
 }
 
+async function loadPendingUsers(){
+  if(!KSGDb.enabled()) return;
+  const container = document.getElementById('pending-users-list');
+  if(!container) return;
+  
+  container.innerHTML = '<p class="settings-copy">Loading...</p>';
+  
+  try{
+    console.log('Loading pending users...');
+    const pendingUsers = await KSGDb.getPendingUsers();
+    console.log('Pending users loaded:', pendingUsers);
+    
+    if(pendingUsers.length === 0){
+      container.innerHTML = '<p class="settings-copy">No pending registrations.</p>';
+      return;
+    }
+    
+    container.innerHTML = pendingUsers.map(user => `
+      <div class="pending-user-item" style="background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:8px;border:1px solid #e5e7eb;">
+        <div style="font-weight:600;margin-bottom:4px;">${user.full_name || user.email}</div>
+        <div style="font-size:13px;color:#6b7280;margin-bottom:8px;">${user.email}</div>
+        <div style="font-size:12px;color:#9ca3af;margin-bottom:8px;">Role: ${user.role || 'admin'}</div>
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">Requested: ${user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-success btn-sm" onclick="approveUser('${user.id}')">✓ Approve</button>
+          <button class="btn btn-danger btn-sm" onclick="rejectUser('${user.id}')">✕ Reject</button>
+        </div>
+      </div>
+    `).join('');
+  }catch(e){
+    console.error('Failed to load pending users:', e);
+    container.innerHTML = `<p class="settings-copy" style="color:red">Failed to load pending users: ${e.message}</p>`;
+  }
+}
+
+async function approveUser(userId){
+  if(!confirm('Approve this user? They will be able to log in and use the system.')) return;
+  try{
+    await KSGDb.updateUserStatus(userId, 'active');
+    toast('User approved successfully!','success');
+    logActivity(`User approved: ${userId}`, 'user_approved');
+    loadPendingUsers();
+  }catch(e){
+    toast('Failed to approve user: '+e.message, 'error');
+  }
+}
+
+async function rejectUser(userId){
+  if(!confirm('Reject this user? They will not be able to log in.')) return;
+  try{
+    await KSGDb.updateUserStatus(userId, 'rejected');
+    toast('User rejected.','success');
+    logActivity(`User rejected: ${userId}`, 'user_rejected');
+    loadPendingUsers();
+  }catch(e){
+    toast('Failed to reject user: '+e.message, 'error');
+  }
+}
+
+async function createUserManual(){
+  const name = document.getElementById('manual-reg-name').value.trim();
+  const email = document.getElementById('manual-reg-email').value.trim();
+  const pass = document.getElementById('manual-reg-pass').value;
+  const role = document.getElementById('manual-reg-role').value;
+  
+  if(!name || !email || !pass){
+    toast('All fields are required.', 'error');
+    return;
+  }
+  if(pass.length < 8){
+    toast('Password must be at least 8 characters.', 'error');
+    return;
+  }
+  
+  if(!KSGDb.enabled()){
+    toast('Supabase not configured.', 'error');
+    return;
+  }
+  
+  try{
+    const sb = KSGSupabase.init();
+    // Create user in Supabase Auth
+    const { data: authData, error: authError } = await sb.auth.signUp({
+      email,
+      password: pass,
+      options: {
+        data: { full_name: name, role: role },
+        emailRedirectTo: window.location.href
+      }
+    });
+    
+    if(authError){
+      // Handle rate limit error specifically
+      if(authError.message && authError.message.includes('rate limit')) {
+        toast('Email rate limit exceeded. Please disable email confirmation in Supabase Dashboard or create user via Supabase Dashboard directly.', 'error');
+        alert('Email Rate Limit Exceeded\n\nTo create users without email limits:\n1. Go to Supabase Dashboard\n2. Authentication → Email\n3. Disable "Confirm email"\n4. Or create user directly in Supabase Dashboard → Authentication → Users');
+      } else {
+        toast('Failed to create user: ' + authError.message, 'error');
+      }
+      return;
+    }
+    
+    // Wait a moment for the trigger to create the profile
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Update the profile to set status to 'active' immediately
+    if(authData.user){
+      await KSGDb.updateUserStatus(authData.user.id, 'active');
+    }
+    
+    toast('User created successfully with active status!', 'success');
+    logActivity(`User created manually: ${email} (${role})`, 'user_created');
+    
+    // Clear form
+    document.getElementById('manual-reg-name').value = '';
+    document.getElementById('manual-reg-email').value = '';
+    document.getElementById('manual-reg-pass').value = '';
+    
+  }catch(e){
+    toast('Failed to create user: ' + e.message, 'error');
+  }
+}
+
 // ─── GLOBAL SEARCH ────────────────────────────
 function globalSearch(q){
   if(!q) return;
@@ -2896,9 +3186,9 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 // ─── Per-field text styling + drag ───────────────────────────
 (function(){
   const DEFAULTS = {
-    'pt-name':    {ff:'Times New Roman', size:30, w:800, ls:0.5, top:183, left:257, color:'#000000', bg:false},
+    'pt-name':    {ff:'Times New Roman', size:30, w:800, ls:0.5, top:195, left:257, color:'#000000', bg:false},
     'pt-position':{ff:'Times New Roman', size:24, w:700, ls:0.5, top:226, left:260, color:'#000000', bg:false},
-    'pt-dept':    {ff:'Times New Roman', size:25, w:700, ls:0.5, top:269, left:258, color:'#000000', bg:false},
+    'pt-dept':    {ff:'Times New Roman', size:25, w:700, ls:0.5, top:249, left:264, color:'#000000', bg:false},
     'pt-orgname': {ff:'Arial',           size:22, w:700, ls:1.5, top:132, left:284, color:'#A2A825', bg:false},
   };
   const state = JSON.parse(JSON.stringify(DEFAULTS));
@@ -2996,5 +3286,9 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
   else init();
 })();
 </script>
+
+<footer style="position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; text-align: center; font-size: 0.75rem; color: var(--ksg-gold); background: var(--ksg-dark); border-top: 1px solid var(--ksg-navy); z-index: 1000;">
+  Copyright (c) 2026 Roy Mbeche. All Rights Reserved.
+</footer>
 </body>
 </html>

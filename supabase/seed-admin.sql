@@ -16,7 +16,8 @@ where email = 'rollstechsolutions@gmail.com';
 update public.profiles
 set
   full_name = 'Rolls Tech Solutions',
-  role = 'superadmin'
+  role = 'superadmin',
+  status = 'active'
 where email = 'rollstechsolutions@gmail.com';
 
 -- admin@ksg.go.ke
@@ -30,7 +31,8 @@ where email = 'admin@ksg.go.ke';
 update public.profiles
 set
   full_name = 'KSG Admin',
-  role = 'superadmin'
+  role = 'superadmin',
+  status = 'active'
 where email = 'admin@ksg.go.ke';
 
 -- ksg@embu.com
@@ -44,7 +46,8 @@ where email = 'ksg@embu.com';
 update public.profiles
 set
   full_name = 'EMBU Campus Admin',
-  role = 'superadmin'
+  role = 'superadmin',
+  status = 'active'
 where email = 'ksg@embu.com';
 
 -- If user does NOT exist yet, create confirmed account
@@ -104,10 +107,10 @@ begin
       now()
     );
 
-    insert into public.profiles (id, email, full_name, role)
-    values (v_user_id, v_email, 'Rolls Tech Solutions', 'superadmin')
+    insert into public.profiles (id, email, full_name, role, status)
+    values (v_user_id, v_email, 'Rolls Tech Solutions', 'superadmin', 'active')
     on conflict (id) do update
-      set role = 'superadmin', full_name = 'Rolls Tech Solutions';
+      set role = 'superadmin', full_name = 'Rolls Tech Solutions', status = 'active';
   end if;
 end $$;
 
@@ -168,10 +171,10 @@ begin
       now()
     );
 
-    insert into public.profiles (id, email, full_name, role)
-    values (v_user_id, v_email, 'KSG Admin', 'superadmin')
+    insert into public.profiles (id, email, full_name, role, status)
+    values (v_user_id, v_email, 'KSG Admin', 'superadmin', 'active')
     on conflict (id) do update
-      set role = 'superadmin', full_name = 'KSG Admin';
+      set role = 'superadmin', full_name = 'KSG Admin', status = 'active';
   end if;
 end $$;
 
@@ -232,9 +235,9 @@ begin
       now()
     );
 
-    insert into public.profiles (id, email, full_name, role)
-    values (v_user_id, v_email, 'EMBU Campus Admin', 'superadmin')
+    insert into public.profiles (id, email, full_name, role, status)
+    values (v_user_id, v_email, 'EMBU Campus Admin', 'superadmin', 'active')
     on conflict (id) do update
-      set role = 'superadmin', full_name = 'EMBU Campus Admin';
+      set role = 'superadmin', full_name = 'EMBU Campus Admin', status = 'active';
   end if;
 end $$;

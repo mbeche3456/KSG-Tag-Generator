@@ -13,6 +13,18 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- Add status column if it doesn't exist (for existing tables)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_name = 'profiles' and column_name = 'status'
+  ) then
+    alter table public.profiles add column status text not null default 'active'
+      check (status in ('active', 'pending', 'rejected'));
+  end if;
+end $$;
+
 -- Auto-create profile when a user signs up
 create or replace function public.handle_new_user()
 returns trigger
@@ -21,12 +33,13 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, full_name, role)
+  insert into public.profiles (id, email, full_name, role, status)
   values (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    coalesce(new.raw_user_meta_data->>'role', 'admin')
+    coalesce(new.raw_user_meta_data->>'role', 'admin'),
+    'pending'
   );
   return new;
 end;
@@ -107,52 +120,96 @@ create policy "profiles_update_own"
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
--- Tags: full CRUD for authenticated users
+-- Superadmins can update any profile (for user management)
+drop policy if exists "profiles_update_superadmin" on public.profiles;
+create policy "profiles_update_superadmin"
+  on public.profiles for update
+  to authenticated
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE role = 'superadmin' AND status = 'active'
+    )
+  )
+  with check (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE role = 'superadmin' AND status = 'active'
+    )
+  );
+
+-- Tags: full CRUD for authenticated users with active status
 drop policy if exists "tags_select_authenticated" on public.tags;
 create policy "tags_select_authenticated"
   on public.tags for select
   to authenticated
-  using (true);
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
 drop policy if exists "tags_insert_authenticated" on public.tags;
 create policy "tags_insert_authenticated"
   on public.tags for insert
   to authenticated
-  with check (true);
+  with check (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
 drop policy if exists "tags_update_authenticated" on public.tags;
 create policy "tags_update_authenticated"
   on public.tags for update
   to authenticated
-  using (true)
-  with check (true);
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  )
+  with check (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
 drop policy if exists "tags_delete_authenticated" on public.tags;
 create policy "tags_delete_authenticated"
   on public.tags for delete
   to authenticated
-  using (true);
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
--- Activity logs (Superadmin only for delete)
+-- Activity logs (Admin and Superadmin can delete)
 drop policy if exists "logs_select_authenticated" on public.activity_logs;
 create policy "logs_select_authenticated"
   on public.activity_logs for select
   to authenticated
-  using (true);
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
 drop policy if exists "logs_insert_authenticated" on public.activity_logs;
 create policy "logs_insert_authenticated"
   on public.activity_logs for insert
   to authenticated
-  with check (true);
+  with check (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
-drop policy if exists "logs_delete_superadmin_only" on public.activity_logs;
-create policy "logs_delete_superadmin_only"
+drop policy if exists "logs_delete_admin_only" on public.activity_logs;
+create policy "logs_delete_admin_only"
   on public.activity_logs for delete
   to authenticated
   using (
     auth.uid() IN (
-      SELECT id FROM public.profiles WHERE role = 'superadmin'
+      SELECT id FROM public.profiles WHERE role IN ('admin', 'superadmin') AND status = 'active'
     )
   );
 
@@ -161,20 +218,36 @@ drop policy if exists "settings_select_authenticated" on public.app_settings;
 create policy "settings_select_authenticated"
   on public.app_settings for select
   to authenticated
-  using (true);
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
 drop policy if exists "settings_upsert_authenticated" on public.app_settings;
 create policy "settings_upsert_authenticated"
   on public.app_settings for insert
   to authenticated
-  with check (true);
+  with check (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
 drop policy if exists "settings_update_authenticated" on public.app_settings;
 create policy "settings_update_authenticated"
   on public.app_settings for update
   to authenticated
-  using (true)
-  with check (true);
+  using (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  )
+  with check (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE status = 'active'
+    )
+  );
 
 -- ─── Optional: enable email auth in Dashboard ───────────────
 -- Authentication → Providers → Email → Enable

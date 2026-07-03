@@ -254,6 +254,20 @@ window.KSGDb = (function () {
     return data;
   }
 
+  async function getPendingUsers() {
+    const sb = db();
+    const { data, error } = await sb.from('profiles').select('*').eq('status', 'pending');
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function updateUserStatus(userId, status) {
+    const sb = db();
+    const { data, error } = await sb.from('profiles').update({ status }).eq('id', userId).select().single();
+    if (error) throw error;
+    return data;
+  }
+
   async function testConnection() {
     const sb = db();
     if (!sb) return { ok: false, message: 'Not configured' };
@@ -275,6 +289,8 @@ window.KSGDb = (function () {
     clearLogs,
     upsertSettings,
     getProfile,
+    getPendingUsers,
+    updateUserStatus,
     testConnection,
     mapTag,
     invalidateCache,
