@@ -2168,11 +2168,24 @@ function printModal(){ window.print(); }
 
 // ─── MANAGE TAGS ──────────────────────────────
 let filteredTags = [];
+let filterCache = { q: '', cat: '', status: '', tagsHash: '' };
 
 function applyTagFilters(){
   const q = (document.querySelector('#page-manage .search-box input')?.value || '').toLowerCase();
   const cat = document.getElementById('filter-cat')?.value || '';
   const status = document.getElementById('filter-status')?.value || '';
+  
+  // Create hash of current state for cache comparison
+  const tagsHash = STATE.tags.length + '-' + STATE.tags[0]?.id;
+  const cacheKey = `${q}|${cat}|${status}|${tagsHash}`;
+  
+  // Return cached result if nothing changed
+  if(filterCache.q === q && filterCache.cat === cat && filterCache.status === status && filterCache.tagsHash === tagsHash){
+    return;
+  }
+  
+  filterCache = { q, cat, status, tagsHash };
+  
   filteredTags = STATE.tags.filter(t=>{
     const matchQ = !q || t.full_name.toLowerCase().includes(q) || t.id_number.toLowerCase().includes(q) || (t.department||'').toLowerCase().includes(q) || t.reference_number.toLowerCase().includes(q);
     const matchCat = !cat || t.category===cat;
@@ -2292,36 +2305,37 @@ function renderManageTable(){
   const start = (STATE.currentPage - 1) * STATE.perPage;
   const page = filteredTags.slice(start, start + STATE.perPage);
   
+  // Use document fragment for better performance
   const fragment = document.createDocumentFragment();
-  const tempDiv = document.createElement('div');
   
-  let html = '';
   for(let i = 0; i < page.length; i++){
     const t = page[i];
     const statusClass = t.status === 'Active' ? 'badge-status-active' : t.status === 'Inactive' ? 'badge-status-inactive' : 'badge-status-expired';
-    html += `
-      <tr>
-        <td><input type="checkbox" data-tag-id="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} onchange="toggleTagSelection('${t.id}', this.checked)"></td>
-        <td>${start + i + 1}</td>
-        <td><code style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ksg-gold)">${t.reference_number}</code></td>
-        <td><strong>${t.full_name}</strong></td>
-        <td>${t.department || '—'}</td>
-        <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category || ''}</span></td>
-        <td><code style="font-size:0.8rem;font-family:'DM Mono',monospace">${t.id_number}</code></td>
-        <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
-        <td><span class="badge ${statusClass}">${t.status || 'Active'}</span></td>
-        <td>
-          <div class="action-btns">
-            <button class="btn btn-icon btn-outline btn-sm" onclick="viewTag('${t.id}')" title="View">👁️</button>
-            <button class="btn btn-icon btn-outline btn-sm" onclick="editTag('${t.id}')" title="Edit">✏️</button>
-            <button class="btn btn-icon btn-outline btn-sm" onclick="reprintTag('${t.id}')" title="Reprint">🖨️</button>
-            <button class="btn btn-icon btn-danger btn-sm" onclick="deleteTag('${t.id}')" title="Delete">🗑️</button>
-          </div>
-        </td>
-      </tr>`;
+    
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" data-tag-id="${t.id}" ${selectedIds.has(t.id) ? 'checked' : ''} onchange="toggleTagSelection('${t.id}', this.checked)"></td>
+      <td>${start + i + 1}</td>
+      <td><code style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--ksg-gold)">${t.reference_number}</code></td>
+      <td><strong>${t.full_name}</strong></td>
+      <td>${t.department || '—'}</td>
+      <td><span class="badge badge-${(t.category||'').toLowerCase()}">${t.category || ''}</span></td>
+      <td><code style="font-size:0.8rem;font-family:'DM Mono',monospace">${t.id_number}</code></td>
+      <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
+      <td><span class="badge ${statusClass}">${t.status || 'Active'}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-icon btn-outline btn-sm" onclick="viewTag('${t.id}')" title="View">👁️</button>
+          <button class="btn btn-icon btn-outline btn-sm" onclick="editTag('${t.id}')" title="Edit">✏️</button>
+          <button class="btn btn-icon btn-outline btn-sm" onclick="reprintTag('${t.id}')" title="Reprint">🖨️</button>
+          <button class="btn btn-icon btn-danger btn-sm" onclick="deleteTag('${t.id}')" title="Delete">🗑️</button>
+        </div>
+      </td>`;
+    fragment.appendChild(tr);
   }
   
-  tbody.innerHTML = html;
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
   renderPagination(totalVisible);
 }
 
