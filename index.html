@@ -1686,6 +1686,13 @@ async function doLogout(){
   STATE.user=null; localStorage.removeItem('ksg_user');
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
+  // Clear Supabase session
+  if(KSGSupabase.isConfigured()){
+    try{
+      const sb = KSGSupabase.init();
+      await sb.auth.signOut();
+    }catch(e){}
+  }
 }
 
 // ─── APP INIT ─────────────────────────────────
@@ -3036,8 +3043,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Restore session on page load
-  restoreSession();
+  // Show auth screen on page load (require login)
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
 });
 
 async function restoreSession(){
