@@ -271,9 +271,23 @@ window.KSGDb = (function () {
   async function testConnection() {
     const sb = db();
     if (!sb) return { ok: false, message: 'Not configured' };
-    const { error } = await sb.from('app_settings').select('id').limit(1);
-    if (error) return { ok: false, message: error.message };
-    return { ok: true };
+    
+    try {
+      const { error } = await sb.from('app_settings').select('id').limit(1);
+      if (error) {
+        // Provide more specific error messages
+        if (error.message.includes('Invalid API key') || error.message.includes('JWT')) {
+          return { ok: false, message: 'Invalid anon key. Please check you are using the ANON key (not service role key) from Supabase Dashboard → Project Settings → API.' };
+        }
+        if (error.message.includes('schema') || error.message.includes('relation')) {
+          return { ok: false, message: 'Database schema not found. Please run the schema.sql file in Supabase SQL Editor.' };
+        }
+        return { ok: false, message: error.message };
+      }
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, message: e.message || 'Connection failed' };
+    }
   }
 
   return {

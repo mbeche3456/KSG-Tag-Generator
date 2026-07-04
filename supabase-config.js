@@ -1,15 +1,16 @@
 /**
  * Supabase client configuration for KSG Tag Generator.
  *
- * Option A — edit these defaults (project URL + anon key from Supabase Dashboard):
- *   Project Settings → API → Project URL & anon public key
+ * SECURITY NOTE: For production, do NOT hardcode credentials.
+ * Enter them in Settings → Supabase Integration instead.
  *
- * Option B — leave blank and enter credentials in Settings → Supabase Integration
- *   (saved to localStorage as ksg_sb_url / ksg_sb_key)
+ * For development, you can add defaults below from:
+ *   Project Settings → API → Project URL & anon public key
  */
 window.KSGSupabase = (function () {
-  const DEFAULT_URL = 'https://omqzmhivuoxnawjdxhmm.supabase.co';
-  const DEFAULT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcXptaGl2dW94bmF3amR4aG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDM1MjMsImV4cCI6MjA5ODQ3OTUyM30.Fiy4WANQ4gGpXQupdRzLdMPtpx7ftI-za4n5pKKwzgg';
+  // Remove hardcoded credentials for production security
+  const DEFAULT_URL = '';
+  const DEFAULT_ANON_KEY = '';
 
   let client = null;
 

@@ -203,13 +203,13 @@ create policy "logs_insert_authenticated"
     )
   );
 
-drop policy if exists "logs_delete_admin_only" on public.activity_logs;
-create policy "logs_delete_admin_only"
+drop policy if exists "logs_delete_superadmin_only" on public.activity_logs;
+create policy "logs_delete_superadmin_only"
   on public.activity_logs for delete
   to authenticated
   using (
     auth.uid() IN (
-      SELECT id FROM public.profiles WHERE role IN ('admin', 'superadmin') AND status = 'active'
+      SELECT id FROM public.profiles WHERE role = 'superadmin' AND status = 'active'
     )
   );
 

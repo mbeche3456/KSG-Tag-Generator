@@ -1,5 +1,5 @@
 -- ============================================================
--- Seed super admins: rollstechsolutions@gmail.com, admin@ksg.go.ke, ksg@embu.com
+-- Seed admin users: rollstechsolutions@gmail.com (superadmin), admin@ksg.go.ke (admin), ksg@embu.com (admin)
 -- Run in Supabase Dashboard → SQL Editor (after schema.sql)
 -- ============================================================
 
@@ -20,33 +20,33 @@ set
   status = 'active'
 where email = 'rollstechsolutions@gmail.com';
 
--- admin@ksg.go.ke
+-- admin@ksg.go.ke (admin role)
 update auth.users
 set
   email_confirmed_at = coalesce(email_confirmed_at, now()),
   raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb)
-    || '{"full_name":"KSG Admin","role":"superadmin"}'::jsonb
+    || '{"full_name":"KSG Admin","role":"admin"}'::jsonb
 where email = 'admin@ksg.go.ke';
 
 update public.profiles
 set
   full_name = 'KSG Admin',
-  role = 'superadmin',
+  role = 'admin',
   status = 'active'
 where email = 'admin@ksg.go.ke';
 
--- ksg@embu.com
+-- ksg@embu.com (admin role)
 update auth.users
 set
   email_confirmed_at = coalesce(email_confirmed_at, now()),
   raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb)
-    || '{"full_name":"EMBU Campus Admin","role":"superadmin"}'::jsonb
+    || '{"full_name":"EMBU Campus Admin","role":"admin"}'::jsonb
 where email = 'ksg@embu.com';
 
 update public.profiles
 set
   full_name = 'EMBU Campus Admin',
-  role = 'superadmin',
+  role = 'admin',
   status = 'active'
 where email = 'ksg@embu.com';
 
@@ -114,7 +114,7 @@ begin
   end if;
 end $$;
 
--- Create admin@ksg.go.ke if not exists
+-- Create admin@ksg.go.ke if not exists (admin role)
 do $$
 declare
   v_user_id uuid;
@@ -146,7 +146,7 @@ begin
       crypt('admin123', gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"KSG Admin","role":"superadmin"}'::jsonb,
+      '{"full_name":"KSG Admin","role":"admin"}'::jsonb,
       now(),
       now()
     );
@@ -172,13 +172,13 @@ begin
     );
 
     insert into public.profiles (id, email, full_name, role, status)
-    values (v_user_id, v_email, 'KSG Admin', 'superadmin', 'active')
+    values (v_user_id, v_email, 'KSG Admin', 'admin', 'active')
     on conflict (id) do update
-      set role = 'superadmin', full_name = 'KSG Admin', status = 'active';
+      set role = 'admin', full_name = 'KSG Admin', status = 'active';
   end if;
 end $$;
 
--- Create ksg@embu.com if not exists
+-- Create ksg@embu.com if not exists (admin role)
 do $$
 declare
   v_user_id uuid;
@@ -210,7 +210,7 @@ begin
       crypt('embu', gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"full_name":"EMBU Campus Admin","role":"superadmin"}'::jsonb,
+      '{"full_name":"EMBU Campus Admin","role":"admin"}'::jsonb,
       now(),
       now()
     );
@@ -236,8 +236,8 @@ begin
     );
 
     insert into public.profiles (id, email, full_name, role, status)
-    values (v_user_id, v_email, 'EMBU Campus Admin', 'superadmin', 'active')
+    values (v_user_id, v_email, 'EMBU Campus Admin', 'admin', 'active')
     on conflict (id) do update
-      set role = 'superadmin', full_name = 'EMBU Campus Admin', status = 'active';
+      set role = 'admin', full_name = 'EMBU Campus Admin', status = 'active';
   end if;
 end $$;

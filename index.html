@@ -189,13 +189,13 @@
   .nav-item.active { background: rgba(201,168,76,0.12); color: var(--ksg-gold); }
   .nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
   .nav-badge { margin-left: auto; background: var(--ksg-gold); color: var(--ksg-dark); font-size: 0.68rem; font-weight: 700; padding: 2px 7px; border-radius: 20px; }
-  .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+  .sidebar-footer { padding: 16px 12px; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
   .user-info { display: flex; align-items: center; gap: 10px; padding: 8px; }
-  .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--ksg-gold), var(--ksg-gold-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--ksg-dark); font-size: 0.85rem; }
-  .user-details { flex: 1; }
-  .user-name { color: var(--ksg-white); font-size: 0.85rem; font-weight: 600; }
-  .user-role { color: var(--ksg-gray); font-size: 0.72rem; }
-  .btn-logout { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.4); font-size: 1rem; }
+  .user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--ksg-gold), var(--ksg-gold-light)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--ksg-dark); font-size: 0.85rem; flex-shrink: 0; }
+  .user-details { flex: 1; min-width: 0; }
+  .user-name { color: var(--ksg-white); font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-role { color: var(--ksg-gray); font-size: 0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .btn-logout { background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.8); font-size: 1.1rem; padding: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .btn-logout:hover { color: var(--ksg-danger); }
 
   /* ─── MAIN CONTENT ─── */
@@ -1206,7 +1206,7 @@
                 <button class="btn btn-gold btn-sm" onclick="saveSettings()">💾 Save Settings</button>
               </div>
             </div>
-            <div class="settings-card card">
+            <div class="settings-card card" id="supabase-integration-card">
               <div class="card-header"><span class="card-title">Supabase Integration</span></div>
               <div class="settings-form">
                 <div class="form-group">
@@ -1492,17 +1492,24 @@ function load(){
 
 // ─── AUTH ─────────────────────────────────────
 function switchAuthTab(tab){
-  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));
+  // Cache DOM queries
+  const authTabs = document.querySelectorAll('.auth-tab');
+  const authForms = document.querySelectorAll('.auth-form');
+  
+  authTabs.forEach(t=>t.classList.remove('active'));
+  authForms.forEach(f=>f.classList.remove('active'));
   
   if(tab === 'login'){
-    document.querySelectorAll('.auth-tab')[0].classList.add('active');
-    document.getElementById('form-login').classList.add('active');
+    if(authTabs[0]) authTabs[0].classList.add('active');
+    const loginForm = document.getElementById('form-login');
+    if(loginForm) loginForm.classList.add('active');
   } else if(tab === 'register'){
-    document.querySelectorAll('.auth-tab')[1].classList.add('active');
-    document.getElementById('form-register').classList.add('active');
+    if(authTabs[1]) authTabs[1].classList.add('active');
+    const registerForm = document.getElementById('form-register');
+    if(registerForm) registerForm.classList.add('active');
   } else if(tab === 'reset'){
-    document.getElementById('form-reset').classList.add('active');
+    const resetForm = document.getElementById('form-reset');
+    if(resetForm) resetForm.classList.add('active');
   }
 }
 
@@ -1521,6 +1528,7 @@ async function doLogin(){
         // Check if user status is active
         if(STATE.user.status !== 'active'){
           await sb.auth.signOut();
+          logActivity(`Failed login attempt (pending approval): ${email}`, 'login_failed');
           showAuthAlert('login','Your account is pending approval. Please wait for a superadmin to approve your account.','error');
           return;
         }
@@ -1529,21 +1537,25 @@ async function doLogin(){
       }
       if(error){
         console.warn('Supabase login failed:', error.message);
+        logActivity(`Failed login attempt (Supabase error): ${email} - ${error.message}`, 'login_failed');
       }
     }catch(e){
       console.warn('Supabase login unavailable:', e.message);
+      logActivity(`Failed login attempt (Supabase unavailable): ${email}`, 'login_failed');
     }
   }
 
   // Fallback to local storage if Supabase not configured or fails
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [
+    {email:'rollstechsolutions@gmail.com',pass:'7mbeche#',name:'Rolls Tech Solutions',role:'superadmin',status:'active'},
     {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin',status:'active'},
     {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin',status:'active'}
   ];
   const localUser = users.find(u=>u.email===email&&u.pass===pass);
   if(localUser){
     if(localUser.status !== 'active'){
+      logActivity(`Failed login attempt (pending approval): ${email}`, 'login_failed');
       showAuthAlert('login','Your account is pending approval. Please wait for a superadmin to approve your account.','error');
       return;
     }
@@ -1554,6 +1566,7 @@ async function doLogin(){
     return;
   }
 
+  logActivity(`Failed login attempt (invalid credentials): ${email}`, 'login_failed');
   showAuthAlert('login','Invalid email or password.','error');
 }
 
@@ -1575,6 +1588,7 @@ async function doRegister(){
         }
       });
       if(error){ 
+        logActivity(`Registration failed: ${email} - ${error.message}`, 'registration_failed');
         // Handle rate limit error specifically
         if(error.message && error.message.includes('rate limit')) {
           showAuthAlert('reg','Email rate limit exceeded. Please try again later or contact a superadmin to create your account manually.','error');
@@ -1583,6 +1597,7 @@ async function doRegister(){
         }
         return; 
       }
+      logActivity(`Registration submitted: ${email} (${name})`, 'registration_submitted');
       // Check if email confirmation is required
       if(data.user && !data.user.email_confirmed_at) {
         showAuthAlert('reg','Registration successful! Please check your email to confirm your account. After confirmation, wait for superadmin approval.','success');
@@ -1592,18 +1607,25 @@ async function doRegister(){
       setTimeout(()=>switchAuthTab('login'),4000);
       return;
     }catch(e){ 
+      logActivity(`Registration failed: ${email} - ${e.message}`, 'registration_failed');
       showAuthAlert('reg', e.message||'Registration failed.', 'error'); 
       return; 
     }
   }
   const stored = localStorage.getItem('ksg_users');
   const users = stored ? JSON.parse(stored) : [
+    {email:'rollstechsolutions@gmail.com',pass:'7mbeche#',name:'Rolls Tech Solutions',role:'superadmin',status:'active'},
     {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin',status:'active'},
     {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin',status:'active'}
   ];
-  if(users.find(u=>u.email===email)){ showAuthAlert('reg','Email already registered.','error'); return; }
+  if(users.find(u=>u.email===email)){ 
+    logActivity(`Registration failed (email already exists): ${email}`, 'registration_failed');
+    showAuthAlert('reg','Email already registered.','error'); 
+    return; 
+  }
   users.push({email,pass,name,role:'admin',status:'pending'});
   localStorage.setItem('ksg_users', JSON.stringify(users));
+  logActivity(`Registration submitted (local): ${email} (${name})`, 'registration_submitted');
   showAuthAlert('reg','Account request submitted! A superadmin will review and approve your account.','success');
   setTimeout(()=>switchAuthTab('login'),3000);
 }
@@ -1642,6 +1664,12 @@ async function setUserFromSession(authUser){
       loadPendingUsers();
     }
   }
+  
+  // Show supabase integration card only for superadmins
+  const supabaseCard = document.getElementById('supabase-integration-card');
+  if(supabaseCard){
+    supabaseCard.style.display = STATE.user.role === 'superadmin' ? 'block' : 'none';
+  }
 }
 
 function showAuthAlert(form,msg,type){
@@ -1651,6 +1679,7 @@ function showAuthAlert(form,msg,type){
 
 async function doLogout(){
   logActivity(`User logged out: ${STATE.user?.email}`, 'logout');
+  clearInactivityTracker();
   if(KSGSupabase.isConnected()){
     try{ await KSGSupabase.getClient().auth.signOut(); }catch(e){}
   }
@@ -1660,7 +1689,48 @@ async function doLogout(){
 }
 
 // ─── APP INIT ─────────────────────────────────
-async function initApp(){
+let inactivityTimer = null;
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+function resetInactivityTimer(){
+  if(inactivityTimer) clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    doLogout();
+    toast('Logged out due to inactivity', 'info');
+  }, INACTIVITY_TIMEOUT);
+}
+
+function setupInactivityTracker(){
+  // Debounce mousemove to avoid excessive timer resets
+  let mousemoveTimeout;
+  const debouncedMouseMove = () => {
+    if(mousemoveTimeout) clearTimeout(mousemoveTimeout);
+    mousemoveTimeout = setTimeout(resetInactivityTimer, 1000);
+  };
+  
+  const events = [
+    { event: 'mousedown', handler: resetInactivityTimer },
+    { event: 'mousemove', handler: debouncedMouseMove },
+    { event: 'keypress', handler: resetInactivityTimer },
+    { event: 'scroll', handler: resetInactivityTimer },
+    { event: 'click', handler: resetInactivityTimer },
+    { event: 'touchstart', handler: resetInactivityTimer }
+  ];
+  
+  events.forEach(({ event, handler }) => {
+    document.addEventListener(event, handler);
+  });
+}
+
+function clearInactivityTracker(){
+  if(inactivityTimer) clearTimeout(inactivityTimer);
+  const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'click', 'touchstart'];
+  events.forEach(event => {
+    document.removeEventListener(event, resetInactivityTimer);
+  });
+}
+
+async function initApp(isRestored = false){
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('user-name-disp').textContent = STATE.user.name || STATE.user.email.split('@')[0];
@@ -1669,7 +1739,7 @@ async function initApp(){
   if(KSGDb.enabled()){
     try{
       await loadFromSupabase();
-      toast('Data synced from Supabase ☁️');
+      if(!isRestored) toast('Data synced from Supabase ☁️');
     }catch(e){
       toast('Could not load from Supabase: '+e.message, 'error');
     }
@@ -1679,19 +1749,34 @@ async function initApp(){
   updateTagPreviewInit();
   const dashboardBtn = document.querySelector('.nav-item');
   if(dashboardBtn) gotoPage('dashboard', dashboardBtn);
-  logActivity(`User logged in: ${STATE.user.email} (${STATE.user.role})`, 'login');
-  toast('Welcome back, '+(STATE.user.name||'Admin')+'! 👋');
+  if(!isRestored){
+    logActivity(`User logged in: ${STATE.user.email} (${STATE.user.role})`, 'login');
+    toast('Welcome back, '+(STATE.user.name||'Admin')+'! 👋');
+  }
+  // Start inactivity tracker
+  setupInactivityTracker();
+  resetInactivityTimer();
 }
 
 // ─── NAVIGATION ───────────────────────────────
 function gotoPage(name, btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  // Cache DOM queries
+  const pages = document.querySelectorAll('.page');
+  const navItems = document.querySelectorAll('.nav-item');
+  
+  pages.forEach(p=>p.classList.remove('active'));
+  const targetPage = document.getElementById('page-'+name);
+  if(targetPage) targetPage.classList.add('active');
+  
+  navItems.forEach(n=>n.classList.remove('active'));
   if(btn) btn.classList.add('active');
+  
   const titles={dashboard:'Dashboard',generate:'Generate Tag',manage:'Manage Tags',bulk:'Bulk Generation',reports:'Reports & Analytics',settings:'Settings',logs:'Activity Logs'};
-  document.getElementById('topbar-title').textContent=titles[name]||'Dashboard';
+  const topbarTitle = document.getElementById('topbar-title');
+  if(topbarTitle) topbarTitle.textContent=titles[name]||'Dashboard';
+  
   closeSidebar();
+  logActivity(`Navigated to page: ${name}`, 'navigation');
   if(name==='manage') renderManageTable();
   if(name==='reports') renderReports();
   if(name==='logs') renderLogs();
@@ -2243,10 +2328,22 @@ function renderManageTable(){
 function renderPagination(total){
   const pages=Math.ceil(total/STATE.perPage);
   const el=document.getElementById('pagination');
-  if(pages<=1){el.innerHTML='';return;}
-  let html='';
-  for(let i=1;i<=pages;i++) html+=`<button class="pg-btn${i===STATE.currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
-  el.innerHTML=html;
+  if(pages<=1){
+    el.innerHTML='';
+    return;
+  }
+  
+  // Use document fragment for better performance
+  const fragment = document.createDocumentFragment();
+  for(let i=1;i<=pages;i++){
+    const btn = document.createElement('button');
+    btn.className = `pg-btn${i===STATE.currentPage?' active':''}`;
+    btn.textContent = i;
+    btn.onclick = () => goPage(i);
+    fragment.appendChild(btn);
+  }
+  el.innerHTML = '';
+  el.appendChild(fragment);
 }
 
 function goPage(p){ STATE.currentPage=p; renderManageTable(); }
@@ -2914,13 +3011,58 @@ function exportLogs(){
   toast('Logs exported successfully! 📥', 'success');
 }
 
-// Add search listener for logs
+// Add search listener for logs with debounce
 document.addEventListener('DOMContentLoaded', () => {
   const logsSearch = document.getElementById('logs-search');
   if(logsSearch){
-    logsSearch.addEventListener('input', () => renderLogs());
+    let debounceTimer;
+    logsSearch.addEventListener('input', () => {
+      if(debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => renderLogs(), 300);
+    });
   }
+  
+  // Restore session on page load
+  restoreSession();
 });
+
+async function restoreSession(){
+  // Try to restore Supabase session first
+  if(KSGSupabase.isConfigured()){
+    try{
+      const sb = KSGSupabase.init();
+      const { data: { session } } = await sb.auth.getSession();
+      if(session?.user){
+        await setUserFromSession(session.user);
+        if(STATE.user.status === 'active'){
+          initApp(true); // Pass true to indicate restored session
+          return;
+        }
+      }
+    }catch(e){
+      console.warn('Failed to restore Supabase session:', e.message);
+    }
+  }
+  
+  // Fallback to localStorage session
+  const storedUser = localStorage.getItem('ksg_user');
+  if(storedUser){
+    try{
+      const user = JSON.parse(storedUser);
+      if(user.status === 'active'){
+        STATE.user = user;
+        initApp(true); // Pass true to indicate restored session
+        return;
+      }
+    }catch(e){
+      console.warn('Failed to restore local session:', e.message);
+    }
+  }
+  
+  // No valid session, show auth screen
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
 
 async function clearLogs(){
   // Only allow superadmin to clear logs
