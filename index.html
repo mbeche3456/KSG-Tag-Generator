@@ -1486,16 +1486,20 @@ function load(){
   const s = localStorage.getItem('ksg_settings'); if(s) STATE.settings = {...STATE.settings,...JSON.parse(s)};
   const u = localStorage.getItem('ksg_user'); if(u) STATE.user = JSON.parse(u);
   
-  // Load Supabase credentials from database settings first, then fallback to localStorage
+  // Load Supabase credentials from database settings first, then fallback to localStorage, then hardcoded
   const dbUrl = STATE.settings.supabaseUrl;
   const dbKey = STATE.settings.supabaseAnonKey;
   const localUrl = localStorage.getItem('ksg_sb_url');
   const localKey = localStorage.getItem('ksg_sb_key');
+  const hardcodedUrl = 'https://omqzmhivuoxnawjdxhmm.supabase.co';
+  const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcXptaGl2dW94bmF3amR4aG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDM1MjMsImV4cCI6MjA5ODQ3OTUyM30.Fiy4WANQ4gGpXQupdRzLdMPtpx7ftI-za4n5pKKwzgg';
   
   if(dbUrl && dbKey){
     KSGSupabase.init(dbUrl, dbKey);
   }else if(localUrl && localKey){
     KSGSupabase.init(localUrl, localKey);
+  }else{
+    KSGSupabase.init(hardcodedUrl, hardcodedKey);
   }
 }
 
@@ -1526,12 +1530,6 @@ async function doLogin(){
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-pass').value;
   if(!email||!pass){ showAuthAlert('login','Please enter email and password.','error'); return; }
-
-  // Supabase is now required - no local fallback
-  if(!KSGSupabase.isConfigured()){
-    showAuthAlert('login','Supabase not configured. Please contact administrator.','error');
-    return;
-  }
 
   try{
     const sb = KSGSupabase.init();
@@ -1566,12 +1564,6 @@ async function doRegister(){
   const pass=document.getElementById('reg-pass').value;
   if(!name||!email||!pass){ showAuthAlert('reg','All fields are required.','error'); return; }
   if(pass.length<8){ showAuthAlert('reg','Password must be at least 8 characters.','error'); return; }
-  
-  // Supabase is now required - no local fallback
-  if(!KSGSupabase.isConfigured()){
-    showAuthAlert('reg','Supabase not configured. Please contact administrator.','error');
-    return;
-  }
 
   try{
     const sb = KSGSupabase.init();
@@ -1610,12 +1602,6 @@ async function doRegister(){
 async function doReset(){
   const email=document.getElementById('reset-email').value.trim();
   if(!email){ showAuthAlert('reset','Enter your registered email.','error'); return; }
-  
-  // Supabase is now required
-  if(!KSGSupabase.isConfigured()){
-    showAuthAlert('reset','Supabase not configured. Please contact administrator.','error');
-    return;
-  }
 
   try{
     const sb = KSGSupabase.init();
@@ -3228,11 +3214,6 @@ async function createUserManual(){
     return;
   }
   
-  if(!KSGDb.enabled()){
-    toast('Supabase not configured.', 'error');
-    return;
-  }
-  
   try{
     const sb = KSGSupabase.init();
     // Create user in Supabase Auth
@@ -3310,9 +3291,11 @@ const dbUrl = STATE.settings.supabaseUrl;
 const dbKey = STATE.settings.supabaseAnonKey;
 const localUrl = localStorage.getItem('ksg_sb_url');
 const localKey = localStorage.getItem('ksg_sb_key');
+const hardcodedUrl = 'https://omqzmhivuoxnawjdxhmm.supabase.co';
+const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcXptaGl2dW94bmF3amR4aG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDM1MjMsImV4cCI6MjA5ODQ3OTUyM30.Fiy4WANQ4gGpXQupdRzLdMPtpx7ftI-za4n5pKKwzgg';
 
-const sbUrl = dbUrl || localUrl;
-const sbKey = dbKey || localKey;
+const sbUrl = dbUrl || localUrl || hardcodedUrl;
+const sbKey = dbKey || localKey || hardcodedKey;
 
 if(sbUrl) document.getElementById('set-sb-url').value=sbUrl;
 if(sbKey) document.getElementById('set-sb-key').value=sbKey;
