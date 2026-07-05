@@ -1469,10 +1469,8 @@ function load(){
   const s = localStorage.getItem('ksg_settings'); if(s) STATE.settings = {...STATE.settings,...JSON.parse(s)};
   const u = localStorage.getItem('ksg_user'); if(u) STATE.user = JSON.parse(u);
   
-  // Supabase credentials are hardcoded in source code only
-  const hardcodedUrl = 'https://omqzmhivuoxnawjdxhmm.supabase.co';
-  const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcXptaGl2dW94bmF3amR4aG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDM1MjMsImV4cCI6MjA5ODQ3OTUyM30.Fiy4WANQ4gGpXQupdRzLdMPtpx7ftI-za4n5pKKwzgg';
-  KSGSupabase.init(hardcodedUrl, hardcodedKey);
+  // Supabase credentials are hardcoded in supabase-config.js
+  KSGSupabase.init();
 }
 
 // ─── AUTH ─────────────────────────────────────
@@ -3216,10 +3214,14 @@ function toast(msg,type=''){
 load();
 // Init preview date
 document.getElementById('pt-date').textContent=new Date().toLocaleDateString('en-GB');
-// Supabase credentials are hardcoded in source code only
-const hardcodedUrl = 'https://omqzmhivuoxnawjdxhmm.supabase.co';
-const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcXptaGl2dW94bmF3amR4aG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDM1MjMsImV4cCI6MjA5ODQ3OTUyM30.Fiy4WANQ4gGpXQupdRzLdMPtpx7ftI-za4n5pKKwzgg';
-KSGSupabase.init(hardcodedUrl, hardcodedKey);
+// Supabase credentials are hardcoded in supabase-config.js
+// Ensure Supabase library is loaded before initializing
+if(window.supabase && window.supabase.createClient){
+  KSGSupabase.init();
+  console.log('Supabase initialized successfully');
+}else{
+  console.error('Supabase library not loaded. Check CDN connection.');
+}
 // Mandatory Login: Users must always log in
 (async function bootAuth(){
   // Force login - no auto-login from stored session
