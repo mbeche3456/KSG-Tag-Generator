@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>KSG Tag Generator System</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
@@ -610,10 +613,75 @@
     .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
     .gen-form .form-row { grid-template-columns: 1fr; }
     .reports-grid { grid-template-columns: 1fr; }
+    
+    /* Auth screen mobile */
+    .auth-card { padding: 32px 24px; width: 90vw; }
+    .auth-logo h1 { font-size: 1.3rem; }
+    .auth-logo .crest { width: 60px; height: 60px; font-size: 28px; }
+    
+    /* Tag preview mobile */
+    .id-tag { 
+      width: 100% !important; 
+      height: auto !important; 
+      aspect-ratio: 1.62 / 1;
+      max-width: 400px;
+    }
+    .tag-preview-container { overflow-x: auto; }
+    
+    /* Form inputs mobile */
+    input, select, textarea { font-size: 16px !important; }
+    .btn { min-height: 44px; }
+    
+    /* Tables mobile */
+    .data-table { font-size: 14px; }
+    .data-table th, .data-table td { padding: 8px 6px; }
   }
   @media (max-width: 480px) {
     .stats-grid { grid-template-columns: 1fr; }
-    .auth-card { padding: 32px 22px; }
+    .auth-card { padding: 24px 20px; width: 95vw; }
+    .auth-logo h1 { font-size: 1.1rem; }
+    .auth-logo p { font-size: 0.7rem; }
+    
+    /* Smaller tag preview */
+    .id-tag { max-width: 100%; }
+    
+    /* Compact buttons */
+    .btn { padding: 10px 16px; font-size: 14px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    /* Compact cards */
+    .card { padding: 16px; }
+    .card-header { padding: 12px 16px; }
+    
+    /* Navigation */
+    .nav-item { padding: 12px 16px; font-size: 14px; }
+    .nav-icon { font-size: 18px; }
+    
+    /* Topbar */
+    .topbar { height: 56px; }
+    .topbar-title { font-size: 16px; }
+    
+    /* Forms */
+    .form-group label { font-size: 13px; }
+    .form-row { gap: 12px; }
+    
+    /* Tables */
+    .data-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .data-table { min-width: 600px; }
+    
+    /* Modals */
+    .modal-content { width: 95vw; max-height: 90vh; overflow-y: auto; }
+    
+    /* Toast notifications */
+    .toast { font-size: 14px; padding: 12px 16px; }
+  }
+  
+  /* Extra small devices (very old phones) */
+  @media (max-width: 360px) {
+    .auth-card { padding: 20px 16px; }
+    .auth-logo h1 { font-size: 1rem; }
+    .stats-grid { gap: 8px; }
+    .card { padding: 12px; }
   }
 
   /* PRINT */
