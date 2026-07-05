@@ -1206,24 +1206,7 @@
                 <button class="btn btn-gold btn-sm" onclick="saveSettings()">💾 Save Settings</button>
               </div>
             </div>
-            <div class="settings-card card" id="supabase-integration-card">
-              <div class="card-header"><span class="card-title">Supabase Integration</span></div>
-              <div class="settings-form">
-                <div class="form-group">
-                  <label>Supabase Project URL</label>
-                  <input type="text" id="set-sb-url" placeholder="https://xxxx.supabase.co">
-                </div>
-                <div class="form-group">
-                  <label>Supabase Anon Key</label>
-                  <input type="password" id="set-sb-key" placeholder="eyJ…">
-                </div>
-                <button class="btn btn-gold btn-sm" onclick="testSupabase()">🔗 Test Connection</button>
-                <button class="btn btn-dark btn-sm" onclick="saveSupabase()">💾 Save</button>
-                <div class="settings-note">
-                  🔒 Keys are stored locally in your browser. Never share them.
-                </div>
-              </div>
-            </div>
+
             <div class="settings-card card">
               <div class="card-header"><span class="card-title">Feature Toggles</span></div>
               <div class="settings-form">
@@ -1486,21 +1469,10 @@ function load(){
   const s = localStorage.getItem('ksg_settings'); if(s) STATE.settings = {...STATE.settings,...JSON.parse(s)};
   const u = localStorage.getItem('ksg_user'); if(u) STATE.user = JSON.parse(u);
   
-  // Load Supabase credentials from database settings first, then fallback to localStorage, then hardcoded
-  const dbUrl = STATE.settings.supabaseUrl;
-  const dbKey = STATE.settings.supabaseAnonKey;
-  const localUrl = localStorage.getItem('ksg_sb_url');
-  const localKey = localStorage.getItem('ksg_sb_key');
+  // Supabase credentials are hardcoded in source code only
   const hardcodedUrl = 'https://omqzmhivuoxnawjdxhmm.supabase.co';
   const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcXptaGl2dW94bmF3amR4aG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDM1MjMsImV4cCI6MjA5ODQ3OTUyM30.Fiy4WANQ4gGpXQupdRzLdMPtpx7ftI-za4n5pKKwzgg';
-  
-  if(dbUrl && dbKey){
-    KSGSupabase.init(dbUrl, dbKey);
-  }else if(localUrl && localKey){
-    KSGSupabase.init(localUrl, localKey);
-  }else{
-    KSGSupabase.init(hardcodedUrl, hardcodedKey);
-  }
+  KSGSupabase.init(hardcodedUrl, hardcodedKey);
 }
 
 // ─── AUTH ─────────────────────────────────────
@@ -1631,12 +1603,6 @@ async function setUserFromSession(authUser){
     if(STATE.user.role === 'superadmin'){
       loadPendingUsers();
     }
-  }
-  
-  // Show supabase integration card only for superadmins
-  const supabaseCard = document.getElementById('supabase-integration-card');
-  if(supabaseCard){
-    supabaseCard.style.display = STATE.user.role === 'superadmin' ? 'block' : 'none';
   }
 }
 
@@ -3078,41 +3044,6 @@ async function saveSettings(){
   }
 }
 
-async function saveSupabase(){
-  const url=document.getElementById('set-sb-url').value.trim();
-  const key=document.getElementById('set-sb-key').value.trim();
-  
-  // Only superadmin can save to database
-  if(STATE.user?.role !== 'superadmin'){
-    toast('Only superadmins can modify Supabase configuration','error');
-    return;
-  }
-  
-  // Save to localStorage as fallback
-  localStorage.setItem('ksg_sb_url',url); 
-  localStorage.setItem('ksg_sb_key',key);
-  
-  // Save to database
-  try{
-    STATE.settings.supabaseUrl = url;
-    STATE.settings.supabaseAnonKey = key;
-    await KSGDb.upsertSettings(STATE.settings);
-    toast('Supabase config saved to database!','success');
-  }catch(e){
-    toast('Saved locally (database save failed): '+e.message,'warning');
-  }
-}
-
-async function testSupabase(){
-  const url=document.getElementById('set-sb-url').value.trim();
-  const key=document.getElementById('set-sb-key').value.trim();
-  if(!url||!key){ toast('Enter Supabase URL and anon key.','error'); return; }
-  KSGSupabase.init(url, key);
-  const result = await KSGDb.testConnection();
-  if(result.ok) toast('Supabase connected! ✅','success');
-  else toast('Connection failed: '+result.message,'error');
-}
-
 function applySettings(){
   document.getElementById('pt-orgname').textContent=(STATE.settings.org||'KENYA SCHOOL OF GOVERNMENT').toUpperCase();
   if(STATE.settings.darkMode) document.documentElement.style.setProperty('--ksg-light','#1a2535');
@@ -3285,21 +3216,10 @@ function toast(msg,type=''){
 load();
 // Init preview date
 document.getElementById('pt-date').textContent=new Date().toLocaleDateString('en-GB');
-// Restore Supabase fields & init client
-// Priority: Database settings > localStorage > hardcoded
-const dbUrl = STATE.settings.supabaseUrl;
-const dbKey = STATE.settings.supabaseAnonKey;
-const localUrl = localStorage.getItem('ksg_sb_url');
-const localKey = localStorage.getItem('ksg_sb_key');
+// Supabase credentials are hardcoded in source code only
 const hardcodedUrl = 'https://omqzmhivuoxnawjdxhmm.supabase.co';
 const hardcodedKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tcXptaGl2dW94bmF3amR4aG1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5MDM1MjMsImV4cCI6MjA5ODQ3OTUyM30.Fiy4WANQ4gGpXQupdRzLdMPtpx7ftI-za4n5pKKwzgg';
-
-const sbUrl = dbUrl || localUrl || hardcodedUrl;
-const sbKey = dbKey || localKey || hardcodedKey;
-
-if(sbUrl) document.getElementById('set-sb-url').value=sbUrl;
-if(sbKey) document.getElementById('set-sb-key').value=sbKey;
-KSGSupabase.init(sbUrl, sbKey);
+KSGSupabase.init(hardcodedUrl, hardcodedKey);
 // Mandatory Login: Users must always log in
 (async function bootAuth(){
   // Force login - no auto-login from stored session
