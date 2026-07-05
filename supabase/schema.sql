@@ -93,6 +93,8 @@ create table if not exists public.app_settings (
   log boolean not null default true,
   email boolean not null default false,
   tag_layout jsonb not null default '{}'::jsonb,
+  supabase_url text,
+  supabase_anon_key text,
   updated_at timestamptz not null default now()
 );
 

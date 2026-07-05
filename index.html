@@ -1487,7 +1487,20 @@ function load(){
   const l = localStorage.getItem('ksg_logs'); if(l) STATE.logs = JSON.parse(l);
   const s = localStorage.getItem('ksg_settings'); if(s) STATE.settings = {...STATE.settings,...JSON.parse(s)};
   const u = localStorage.getItem('ksg_user'); if(u) STATE.user = JSON.parse(u);
-  if(KSGSupabase.isConfigured()) KSGSupabase.init();
+  
+  // Load Supabase credentials from database settings first, then fallback to localStorage
+  const dbUrl = STATE.settings.supabaseUrl;
+  const dbKey = STATE.settings.supabaseAnonKey;
+  const localUrl = localStorage.getItem('ksg_sb_url');
+  const localKey = localStorage.getItem('ksg_sb_key');
+  
+  if(dbUrl && dbKey){
+    KSGSupabase.init(dbUrl, dbKey);
+  }else if(localUrl && localKey){
+    KSGSupabase.init(localUrl, localKey);
+  }else if(KSGSupabase.isConfigured()){
+    KSGSupabase.init();
+  }
 }
 
 // ─── AUTH ─────────────────────────────────────
@@ -1686,13 +1699,6 @@ async function doLogout(){
   STATE.user=null; localStorage.removeItem('ksg_user');
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
-  // Clear Supabase session
-  if(KSGSupabase.isConfigured()){
-    try{
-      const sb = KSGSupabase.init();
-      await sb.auth.signOut();
-    }catch(e){}
-  }
 }
 
 // ─── APP INIT ─────────────────────────────────
@@ -3043,9 +3049,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-  // Show auth screen on page load (require login)
-  document.getElementById('auth-screen').style.display = 'flex';
-  document.getElementById('app').style.display = 'none';
+  // Restore session on page load
+  restoreSession();
 });
 
 async function restoreSession(){
@@ -3129,12 +3134,34 @@ async function saveSettings(){
   }
 }
 
-function saveSupabase(){
+async function saveSupabase(){
   const url=document.getElementById('set-sb-url').value.trim();
   const key=document.getElementById('set-sb-key').value.trim();
-  localStorage.setItem('ksg_sb_url',url); localStorage.setItem('ksg_sb_key',key);
-  KSGSupabase.init(url, key);
-  toast('Supabase config saved!','success');
+  
+  // Only superadmin can save to database
+  if(STATE.user?.role !== 'superadmin'){
+    toast('Only superadmins can modify Supabase configuration','error');
+    return;
+  }
+  
+  // Save to localStorage as fallback
+  localStorage.setItem('ksg_sb_url',url); 
+  localStorage.setItem('ksg_sb_key',key);
+  
+  // Save to database if connected
+  if(KSGDb.enabled()){
+    try{
+      STATE.settings.supabaseUrl = url;
+      STATE.settings.supabaseAnonKey = key;
+      await KSGDb.upsertSettings(STATE.settings);
+      toast('Supabase config saved to database!','success');
+    }catch(e){
+      toast('Saved locally (database save failed): '+e.message,'warning');
+    }
+  }else{
+    KSGSupabase.init(url, key);
+    toast('Supabase config saved locally!','success');
+  }
 }
 
 async function testSupabase(){
@@ -3326,7 +3353,15 @@ load();
 // Init preview date
 document.getElementById('pt-date').textContent=new Date().toLocaleDateString('en-GB');
 // Restore Supabase fields & init client
-const sbUrl=localStorage.getItem('ksg_sb_url'); const sbKey=localStorage.getItem('ksg_sb_key');
+// Priority: Database settings > localStorage > hardcoded
+const dbUrl = STATE.settings.supabaseUrl;
+const dbKey = STATE.settings.supabaseAnonKey;
+const localUrl = localStorage.getItem('ksg_sb_url');
+const localKey = localStorage.getItem('ksg_sb_key');
+
+const sbUrl = dbUrl || localUrl;
+const sbKey = dbKey || localKey;
+
 if(sbUrl) document.getElementById('set-sb-url').value=sbUrl;
 if(sbKey) document.getElementById('set-sb-key').value=sbKey;
 if(KSGSupabase.isConfigured()) KSGSupabase.init(sbUrl, sbKey);

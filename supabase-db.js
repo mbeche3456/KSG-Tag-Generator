@@ -71,6 +71,8 @@ window.KSGDb = (function () {
       log: row.log,
       email: row.email,
       tagLayout: row.tag_layout || {},
+      supabaseUrl: row.supabase_url,
+      supabaseAnonKey: row.supabase_anon_key,
     };
   }
 
@@ -87,6 +89,8 @@ window.KSGDb = (function () {
       log: settings.log !== false,
       email: !!settings.email,
       tag_layout: settings.tagLayout || {},
+      supabase_url: settings.supabaseUrl || null,
+      supabase_anon_key: settings.supabaseAnonKey || null,
       updated_at: new Date().toISOString(),
     };
   }
