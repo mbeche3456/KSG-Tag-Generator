@@ -438,6 +438,16 @@
     font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 0.82rem;
     color: #000; text-transform: uppercase; letter-spacing: 0.5px;
   }
+  .id-tag .tag-pno {
+    position: absolute; top: 55%; left: 0; right: 0; text-align: center;
+    font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 0.75rem;
+    color: #000; letter-spacing: 0.3px;
+  }
+  .id-tag .tag-idno {
+    position: absolute; top: 61%; left: 0; right: 0; text-align: center;
+    font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 0.75rem;
+    color: #000; letter-spacing: 0.3px;
+  }
   .id-tag .tag-dept {
     position: absolute; top: 76%; left: 0; right: 0; text-align: center;
     font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 0.96rem;
@@ -614,6 +624,9 @@
     .gen-form .form-row { grid-template-columns: 1fr; }
     .reports-grid { grid-template-columns: 1fr; }
     
+    /* Footer mobile */
+    footer { margin-left: 0 !important; }
+    
     /* Auth screen mobile */
     .auth-card { padding: 32px 24px; width: 90vw; }
     .auth-logo h1 { font-size: 1.3rem; }
@@ -707,6 +720,7 @@
       color: #7F622C !important; letter-spacing: 0.5px !important;
       transform: none !important;
     }
+    /* Default positions (no category or Intern) */
     .id-tag .tag-name {
       position: absolute !important; top: 44% !important; left: 0 !important; right: 0 !important;
       text-align: center; font-family: Georgia, 'Times New Roman', serif !important;
@@ -727,6 +741,23 @@
       font-weight: 700 !important; font-size: 0.96rem !important;
       color: #000 !important; text-transform: uppercase; letter-spacing: 0.5px !important;
       padding: 0 8px !important; transform: none !important;
+    }
+    /* Attachee category positions (category displayed) */
+    .id-tag .tag-name[style*="top: 183px"] {
+      top: 40% !important;
+    }
+    .id-tag .tag-position[style*="top: 226px"] {
+      top: 55% !important;
+    }
+    .id-tag .tag-dept[style*="top: 269px"] {
+      top: 70% !important;
+    }
+    /* Intern category positions (no category display) */
+    .id-tag .tag-name[style*="top: 195px"] {
+      top: 44% !important;
+    }
+    .id-tag .tag-dept[style*="top: 249px"] {
+      top: 76% !important;
     }
   }
 
@@ -988,12 +1019,44 @@
               <div class="gen-form">
                 <div class="form-row">
                   <div class="form-group">
+                    <label class="modal-form-label--dark">Category</label>
+                    <select id="f-cat" onchange="updatePreview(); toggleStaffFields()" class="modal-form-input--dark">
+                      <option value="">Select Category</option>
+                      <option value="Staff">Staff</option>
+                      <option value="Attachee">Attachee</option>
+                      <option value="Intern">Intern</option>
+                      <option value="Visitor">Visitor</option>
+                      <option value="Student">Student</option>
+                      <option value="Trainer">Trainer</option>
+                    </select>
+                    <div class="field-error" id="err-cat"></div>
+                  </div>
+                  <select id="f-status" class="field-hidden">
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                    <option value="Expired">Expired</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
                     <label class="modal-form-label--dark">Full Name *</label>
                     <input type="text" id="f-name" placeholder="e.g. John Kamau Mwangi" oninput="updatePreview()" class="modal-form-input--dark">
                     <div class="field-error" id="err-name"></div>
                   </div>
                   <input type="hidden" id="f-idnum" value="">
                   <div class="field-error field-hidden" id="err-idnum"></div>
+                </div>
+                <div class="form-row" id="staff-fields-row" style="display: none;">
+                  <div class="form-group">
+                    <label class="modal-form-label--dark">P/No</label>
+                    <input type="text" id="f-pno" placeholder="e.g. 12345" oninput="updatePreview()" class="modal-form-input--dark">
+                    <div class="field-error" id="err-pno"></div>
+                  </div>
+                  <div class="form-group">
+                    <label class="modal-form-label--dark">ID/No</label>
+                    <input type="text" id="f-idno" placeholder="e.g. 12345678" oninput="updatePreview()" class="modal-form-input--dark">
+                    <div class="field-error" id="err-idno"></div>
+                  </div>
                 </div>
                 <div class="form-row">
                   <div class="form-group">
@@ -1016,26 +1079,6 @@
                   <input type="hidden" id="f-position" value="">
                   <div class="field-error field-hidden" id="err-position"></div>
                 </div>
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="modal-form-label--dark">Category</label>
-                    <select id="f-cat" onchange="updatePreview()" class="modal-form-input--dark">
-                      <option value="">Select Category</option>
-                      <option value="Staff">Staff</option>
-                      <option value="Attachee">Attachee</option>
-                      <option value="Intern">Intern</option>
-                      <option value="Visitor">Visitor</option>
-                      <option value="Student">Student</option>
-                      <option value="Trainer">Trainer</option>
-                    </select>
-                    <div class="field-error" id="err-cat"></div>
-                  </div>
-                  <select id="f-status" class="field-hidden">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Expired">Expired</option>
-                  </select>
-                </div>
                 <div class="form-actions">
                   <button class="btn btn-success" onclick="saveTagOnly()">💾 Save Tag</button>
                   <button class="btn btn-gold" onclick="generateTagPDF()">📄 Download PDF</button>
@@ -1049,6 +1092,8 @@
                     <select id="sp-target" class="style-panel-select style-panel-select--compact">
                       <option value="pt-name">Full Name</option>
                       <option value="pt-dept">Department</option>
+                      <option value="pt-pno">P/No</option>
+                      <option value="pt-idno">ID/No</option>
                       <option value="pt-orgname">Institution</option>
                     </select>
                   </div>
@@ -1099,6 +1144,8 @@
                       <div class="tag-org-name" id="pt-orgname">KENYA SCHOOL OF GOVERNMENT</div>
                       <div class="tag-name" id="pt-name">ROY MBECHE</div>
                       <div class="tag-position" id="pt-position"></div>
+                      <div class="tag-pno" id="pt-pno" style="display: none;"></div>
+                      <div class="tag-idno" id="pt-idno" style="display: none;"></div>
                       <div class="tag-dept" id="pt-dept">ICT</div>
                       <div class="tag-meta-strip">
                         <span class="tag-ref" id="pt-ref">KSG-REF-0000</span>
@@ -1292,6 +1339,26 @@
                 <button class="btn btn-outline btn-sm settings-action-btn" onclick="exportAll()">📥 Export All Tags (CSV)</button>
                 <button class="btn btn-outline btn-sm settings-action-btn" onclick="exportPDFReport()">📄 Export PDF Report</button>
                 <button class="btn btn-danger btn-sm settings-action-btn" onclick="clearAllData()">🗑️ Clear All Data</button>
+              </div>
+            </div>
+            <div class="settings-card card">
+              <div class="card-header"><span class="card-title">Developer Information</span></div>
+              <div class="settings-form">
+                <p class="settings-copy">Contact the developer for support or inquiries.</p>
+                <div style="margin-top: 16px;">
+                  <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 0.82rem; color: var(--ksg-dark);">Name:</strong>
+                    <p style="margin: 4px 0 0 0; font-size: 0.87rem; color: var(--ksg-gray);">Roy Mbeche</p>
+                  </div>
+                  <div style="margin-bottom: 12px;">
+                    <strong style="font-size: 0.82rem; color: var(--ksg-dark);">Contact:</strong>
+                    <p style="margin: 4px 0 0 0; font-size: 0.87rem; color: var(--ksg-gray);">0799469163</p>
+                  </div>
+                  <div>
+                    <strong style="font-size: 0.82rem; color: var(--ksg-dark);">Email:</strong>
+                    <p style="margin: 4px 0 0 0; font-size: 0.87rem; color: var(--ksg-gray);">rollstechsolutions@gmail.com</p>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="settings-card card" id="user-management-card" style="display:none;">
@@ -1816,6 +1883,25 @@ const PREVIEW_REFS = {
   ptPos: null,
 };
 
+function toggleStaffFields(){
+  const catEl = document.getElementById('f-cat');
+  const staffFieldsRow = document.getElementById('staff-fields-row');
+  const deptRow = document.getElementById('f-dept').closest('.form-row');
+  const cat = catEl?.value || '';
+
+  if (cat === 'Staff') {
+    staffFieldsRow.style.display = 'flex';
+    deptRow.style.display = 'none';
+    // Apply Staff-specific text styling defaults
+    applyStaffDefaults();
+  } else {
+    staffFieldsRow.style.display = 'none';
+    deptRow.style.display = 'flex';
+    // Reset to general defaults for other categories
+    resetToDefaults();
+  }
+}
+
 function updatePreview(){
   if (previewRenderHandle) {
     cancelAnimationFrame(previewRenderHandle);
@@ -1828,32 +1914,90 @@ function updatePreview(){
       PREVIEW_REFS.deptEl = document.getElementById('f-dept');
       PREVIEW_REFS.posEl = document.getElementById('f-position');
       PREVIEW_REFS.catEl = document.getElementById('f-cat');
+      PREVIEW_REFS.pnoEl = document.getElementById('f-pno');
+      PREVIEW_REFS.idnoEl = document.getElementById('f-idno');
       PREVIEW_REFS.ptName = document.getElementById('pt-name');
       PREVIEW_REFS.ptDept = document.getElementById('pt-dept');
       PREVIEW_REFS.ptPos = document.getElementById('pt-position');
+      PREVIEW_REFS.ptPno = document.getElementById('pt-pno');
+      PREVIEW_REFS.ptIdno = document.getElementById('pt-idno');
     }
 
-    const { nameEl, deptEl, posEl, catEl, ptName, ptDept, ptPos } = PREVIEW_REFS;
+    const { nameEl, deptEl, posEl, catEl, pnoEl, idnoEl, ptName, ptDept, ptPos, ptPno, ptIdno } = PREVIEW_REFS;
     if(!nameEl || !deptEl || !posEl || !catEl || !ptName || !ptDept || !ptPos) return;
 
     const name = nameEl.value.trim() || 'FULL NAME';
     const dept = deptEl.value || 'DEPARTMENT';
     const pos = posEl.value.trim();
     const cat = catEl.value || '';
+    const pno = pnoEl?.value.trim() || '';
+    const idno = idnoEl?.value.trim() || '';
 
-    ptName.textContent = name.toUpperCase();
+    // Handle Staff category - show only "Name:" prefix without the actual name
+    if (cat === 'Staff') {
+      ptName.textContent = 'Name:';
+    } else {
+      ptName.textContent = name.toUpperCase();
+    }
     ptDept.textContent = dept.toUpperCase();
-    
-    if (cat) {
+
+    // Handle Staff category with P/No and ID/No
+    if (cat === 'Staff') {
+      ptPos.textContent = '';
+      ptPos.style.display = 'none';
+      // Always show prefixes for Staff category, even with empty values
+      // Use HTML to allow proper spacing after prefix
+      ptPno.innerHTML = `P/No: <span style="margin-left: 2px;">${pno || ''}</span>`;
+      ptPno.style.display = 'block';
+      ptIdno.innerHTML = `ID/No: <span style="margin-left: 2px;">${idno || ''}</span>`;
+      ptIdno.style.display = 'block';
+      // Staff-specific styling - fixed exact values as specified for all fields
+      ptName.style.top = '170px';
+      ptName.style.left = '62px';
+      ptName.style.fontSize = '22px';
+      ptName.style.fontWeight = '800';
+      ptName.style.letterSpacing = '0.5px';
+      ptPno.style.top = '222px';
+      ptPno.style.left = '59px';
+      ptPno.style.fontSize = '21px';
+      ptPno.style.fontWeight = '600';
+      ptPno.style.letterSpacing = '0.3px';
+      ptIdno.style.top = '274px';
+      ptIdno.style.left = '68px';
+      ptIdno.style.fontSize = '21px';
+      ptIdno.style.fontWeight = '600';
+      ptIdno.style.letterSpacing = '0.3px';
+      ptDept.style.display = 'none';
+    } else if (cat === 'Attachee') {
       ptPos.textContent = cat.toUpperCase();
       ptPos.style.display = 'block';
-      // Adjust positions when category is present
+      ptPno.style.display = 'none';
+      ptIdno.style.display = 'none';
+      // Adjust positions when category is Attachee
+      ptName.style.top = '183px';
+      ptDept.style.top = '269px';
+    } else if (cat === 'Intern') {
+      ptPos.textContent = '';
+      ptPos.style.display = 'none';
+      ptPno.style.display = 'none';
+      ptIdno.style.display = 'none';
+      // Adjust positions when category is Intern (no category display)
+      ptName.style.top = '195px';
+      ptDept.style.top = '249px';
+    } else if (cat) {
+      ptPos.textContent = cat.toUpperCase();
+      ptPos.style.display = 'block';
+      ptPno.style.display = 'none';
+      ptIdno.style.display = 'none';
+      // Default positions for other categories (Staff, etc.)
       ptName.style.top = '183px';
       ptDept.style.top = '269px';
     } else {
       ptPos.textContent = '';
       ptPos.style.display = 'none';
-      // Adjust positions when category is NOT present
+      ptPno.style.display = 'none';
+      ptIdno.style.display = 'none';
+      // Default positions when no category selected
       ptName.style.top = '195px';
       ptDept.style.top = '249px';
     }
@@ -1866,16 +2010,20 @@ function getTagFormData(){
   const catEl = document.getElementById('f-cat');
   const posEl = document.getElementById('f-position');
   const idEl = document.getElementById('f-idnum');
-  
+  const pnoEl = document.getElementById('f-pno');
+  const idnoEl = document.getElementById('f-idno');
+
   const full_name = nameEl?.value.trim() || '';
   const department = deptEl?.value || '';
   const category = catEl?.value || '';
   let position = posEl?.value.trim() || '';
   let id_number = idEl?.value.trim() || '';
-  
+  const p_number = pnoEl?.value.trim() || '';
+  const id_number_value = idnoEl?.value.trim() || '';
+
   if(!position) position = category;
   if(!id_number) id_number = currentRef;
-  
+
   return {
     reference_number: currentRef,
     full_name,
@@ -1883,6 +2031,8 @@ function getTagFormData(){
     category,
     position,
     id_number,
+    p_number,
+    id_number_value,
     status: document.getElementById('f-status').value || 'Active',
     date_generated: new Date().toISOString(),
     created_by: STATE.user?.email || 'system',
@@ -1892,10 +2042,17 @@ function getTagFormData(){
 // ─── FORM VALIDATION ──────────────────────────
 function validateForm(){
   let ok=true;
+  const catEl = document.getElementById('f-cat');
+  const category = catEl?.value || '';
+  
   const fields=[
-    {id:'f-name',err:'err-name',msg:'Full name is required'},
-    {id:'f-dept',err:'err-dept',msg:'Department is required'}
+    {id:'f-name',err:'err-name',msg:'Full name is required'}
   ];
+  
+  // Only require department if not Staff category
+  if (category !== 'Staff') {
+    fields.push({id:'f-dept',err:'err-dept',msg:'Department is required'});
+  }
   
   fields.forEach(f=>{
     const inputEl=document.getElementById(f.id);
@@ -2098,7 +2255,7 @@ async function generateTagPNG(){
 }
 
 function clearForm(){
-  const ids=['f-name','f-idnum','f-position'];
+  const ids=['f-name','f-idnum','f-position','f-pno','f-idno'];
   const selects=['f-dept','f-cat'];
   ids.forEach(id=>{
     const el=document.getElementById(id);
@@ -2110,7 +2267,7 @@ function clearForm(){
   });
   const statusEl=document.getElementById('f-status');
   if(statusEl) statusEl.selectedIndex=0;
-  const errs=['err-name','err-idnum','err-dept','err-position','err-cat'];
+  const errs=['err-name','err-idnum','err-dept','err-position','err-cat','err-pno','err-idno'];
   errs.forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.textContent='';
@@ -2366,20 +2523,74 @@ function viewTag(id){
 }
 
 function buildTagHTML(t){
-  const hasCategory = !!t.category;
-  const nameTop = hasCategory ? '183px' : '195px';
-  const deptTop = hasCategory ? '269px' : '249px';
-  const categoryHtml = hasCategory ? `<div class="tag-position">${t.category.toUpperCase()}</div>` : '';
-  
+  const cat = t.category || '';
+  const p_number = t.p_number || '';
+  const id_number_value = t.id_number_value || '';
+  let nameTop, deptTop, categoryHtml, pnoHtml, idnoHtml, deptHtml, nameDisplay, nameStyle;
+
+  if (cat === 'Staff') {
+    nameTop = '170px';
+    deptTop = '269px';
+    categoryHtml = '';
+    // Staff-specific styling for P/No and ID/No - always show prefixes even with empty values
+    // Use HTML to allow proper spacing after prefix
+    pnoHtml = `<div class="tag-pno" style="top: 222px !important; left: 59px !important; font-size: 21px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">P/No: <span style="margin-left: 2px;">${p_number || ''}</span></div>`;
+    idnoHtml = `<div class="tag-idno" style="top: 274px !important; left: 68px !important; font-size: 21px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">ID/No: <span style="margin-left: 2px;">${id_number_value || ''}</span></div>`;
+    // Hide department for Staff category on tag
+    deptHtml = '';
+    // Show only "Name:" prefix without the actual name for Staff category
+    nameDisplay = 'Name:';
+    // Staff-specific styling for Full Name - fixed exact values as specified
+    nameStyle = 'top: 170px !important; left: 62px !important; font-size: 22px !important; font-weight: 800 !important; letter-spacing: 0.5px !important;';
+  } else if (cat === 'Attachee') {
+    nameTop = '183px';
+    deptTop = '269px';
+    categoryHtml = `<div class="tag-position">${cat.toUpperCase()}</div>`;
+    pnoHtml = '';
+    idnoHtml = '';
+    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
+    nameDisplay = (t.full_name||'').toUpperCase();
+    nameStyle = `top: ${nameTop} !important;`;
+  } else if (cat === 'Intern') {
+    nameTop = '195px';
+    deptTop = '249px';
+    categoryHtml = '';
+    pnoHtml = '';
+    idnoHtml = '';
+    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
+    nameDisplay = (t.full_name||'').toUpperCase();
+    nameStyle = `top: ${nameTop} !important;`;
+  } else if (cat) {
+    nameTop = '183px';
+    deptTop = '269px';
+    categoryHtml = `<div class="tag-position">${cat.toUpperCase()}</div>`;
+    pnoHtml = '';
+    idnoHtml = '';
+    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
+    nameDisplay = (t.full_name||'').toUpperCase();
+    nameStyle = `top: ${nameTop} !important;`;
+  } else {
+    nameTop = '195px';
+    deptTop = '249px';
+    categoryHtml = '';
+    pnoHtml = '';
+    idnoHtml = '';
+    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
+    nameDisplay = (t.full_name||'').toUpperCase();
+    nameStyle = `top: ${nameTop} !important;`;
+  }
+
   return `<div class="id-tag">
     <div>${WAVE_SVG_MARKUP}</div>
     <div class="tag-content">
       <div class="tag-coa"><img src="${COA_LOGO}" alt="Kenya Coat of Arms"></div>
       <div class="tag-ksg"><img src="${KSG_LOGO}" alt="KSG Logo"></div>
       <div class="tag-org-name">${(STATE.settings.org||'KENYA SCHOOL OF GOVERNMENT').toUpperCase()}</div>
-      <div class="tag-name" style="top: ${nameTop} !important">${(t.full_name||'').toUpperCase()}</div>
+      <div class="tag-name" style="${nameStyle}">${nameDisplay}</div>
       ${categoryHtml}
-      <div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>
+      ${pnoHtml}
+      ${idnoHtml}
+      ${deptHtml}
       <div class="tag-meta-strip">
         <span class="tag-ref">${t.reference_number}</span>
         <span class="tag-date">${new Date(t.date_generated).toLocaleDateString('en-GB')}</span>
@@ -3312,9 +3523,18 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
   const DEFAULTS = {
     'pt-name':    {ff:'Times New Roman', size:30, w:800, ls:0.5, top:195, left:257, color:'#000000', bg:false},
     'pt-position':{ff:'Times New Roman', size:24, w:700, ls:0.5, top:226, left:260, color:'#000000', bg:false},
+    'pt-pno':     {ff:'Times New Roman', size:18, w:600, ls:0.3, top:226, left:260, color:'#000000', bg:false},
+    'pt-idno':    {ff:'Times New Roman', size:18, w:600, ls:0.3, top:249, left:260, color:'#000000', bg:false},
     'pt-dept':    {ff:'Times New Roman', size:25, w:700, ls:0.5, top:249, left:264, color:'#000000', bg:false},
     'pt-orgname': {ff:'Arial',           size:22, w:700, ls:1.5, top:132, left:284, color:'#A2A825', bg:false},
   };
+  
+  const STAFF_DEFAULTS = {
+    'pt-name':    {ff:'Times New Roman', size:22, w:800, ls:0.5, top:170, left:62, color:'#000000', bg:false},
+    'pt-pno':     {ff:'Times New Roman', size:21, w:600, ls:0.3, top:222, left:59, color:'#000000', bg:false},
+    'pt-idno':    {ff:'Times New Roman', size:21, w:600, ls:0.3, top:274, left:68, color:'#000000', bg:false},
+  };
+  
   const state = JSON.parse(JSON.stringify(DEFAULTS));
 
   function apply(id){
@@ -3322,11 +3542,25 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
     const s = state[id];
     const set = (p,v)=>el.style.setProperty(p,v,'important');
     set('font-family', `"${s.ff}", sans-serif`);
-    set('font-size', s.size+'px');
+    
+    // Check if Staff category is selected - if so, lock position to Staff defaults
+    const catEl = document.getElementById('f-cat');
+    const isStaff = catEl?.value === 'Staff';
+    
+    // Only apply size and position if not Staff category
+    if (!isStaff || !STAFF_DEFAULTS[id]) {
+      set('font-size', s.size+'px');
+      set('top', s.top+'px');
+      set('left', s.left+'px');
+    } else {
+      // Apply Staff defaults for size and position (fixed)
+      set('font-size', STAFF_DEFAULTS[id].size+'px');
+      set('top', STAFF_DEFAULTS[id].top+'px');
+      set('left', STAFF_DEFAULTS[id].left+'px');
+    }
+    
     set('font-weight', s.w);
     set('letter-spacing', s.ls+'px');
-    set('top', s.top+'px');
-    set('left', s.left+'px');
     set('right','auto');
     set('transform','translate(-50%, -50%)');
     set('color', s.color);
@@ -3337,6 +3571,31 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
     set('cursor','move');
   }
   function applyAll(){ Object.keys(state).forEach(apply); }
+
+  function applyStaffDefaults(){
+    // Apply Staff-specific defaults to state
+    Object.keys(STAFF_DEFAULTS).forEach(key => {
+      state[key] = {...STAFF_DEFAULTS[key]};
+      apply(key);
+    });
+    // Update UI to reflect new values
+    loadUI();
+  }
+
+  function resetToDefaults(){
+    // Reset to general defaults
+    Object.keys(DEFAULTS).forEach(key => {
+      if (state[key]) {
+        state[key] = {...DEFAULTS[key]};
+        apply(key);
+      }
+    });
+    loadUI();
+  }
+
+  // Expose functions to global scope for use by toggleStaffFields
+  window.applyStaffDefaults = applyStaffDefaults;
+  window.resetToDefaults = resetToDefaults;
 
   const $ = id=>document.getElementById(id);
   function loadUI(){
@@ -3411,8 +3670,8 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 })();
 </script>
 
-<footer style="position: fixed; bottom: 0; left: 0; right: 0; padding: 8px; text-align: center; font-size: 0.75rem; color: var(--ksg-gold); background: var(--ksg-dark); border-top: 1px solid var(--ksg-navy); z-index: 1000;">
-  Copyright (c) 2026 Roy Mbeche. All Rights Reserved.
+<footer style="position: sticky; bottom: 0; margin-left: var(--sidebar-w); padding: 8px; text-align: center; font-size: 0.75rem; color: var(--ksg-gold); border-top: 1px solid var(--ksg-navy); background: var(--ksg-dark); z-index: 1000;">
+  Copyright © 2026 Roy Mbeche. All Rights Reserved.
 </footer>
 </body>
 </html>
