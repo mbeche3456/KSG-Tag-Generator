@@ -1467,14 +1467,12 @@ function saveLocal(){
 
 function save(){
   saveLocal();
-  if(KSGDb.enabled()) syncToSupabase().catch(e=>console.warn('Supabase sync:', e.message));
+  syncToSupabase().catch(e=>console.warn('Supabase sync:', e.message));
 }
 async function syncToSupabase(){
-  if(!KSGDb.enabled()) return;
   await KSGDb.upsertSettings(STATE.settings);
 }
 async function loadFromSupabase(){
-  if(!KSGDb.enabled()) return false;
   const data = await KSGDb.loadAll();
   STATE.tags = data.tags;
   STATE.logs = data.logs;
@@ -1498,8 +1496,6 @@ function load(){
     KSGSupabase.init(dbUrl, dbKey);
   }else if(localUrl && localKey){
     KSGSupabase.init(localUrl, localKey);
-  }else if(KSGSupabase.isConfigured()){
-    KSGSupabase.init();
   }
 }
 
@@ -1531,56 +1527,37 @@ async function doLogin(){
   const pass = document.getElementById('login-pass').value;
   if(!email||!pass){ showAuthAlert('login','Please enter email and password.','error'); return; }
 
-  // Try Supabase first (prioritize Supabase over local)
-  if(KSGSupabase.isConfigured()){
-    try{
-      const sb = KSGSupabase.init();
-      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-      if(!error && data?.user){
-        await setUserFromSession(data.user);
-        // Check if user status is active
-        if(STATE.user.status !== 'active'){
-          await sb.auth.signOut();
-          logActivity(`Failed login attempt (pending approval): ${email}`, 'login_failed');
-          showAuthAlert('login','Your account is pending approval. Please wait for a superadmin to approve your account.','error');
-          return;
-        }
-        initApp();
-        return;
-      }
-      if(error){
-        console.warn('Supabase login failed:', error.message);
-        logActivity(`Failed login attempt (Supabase error): ${email} - ${error.message}`, 'login_failed');
-      }
-    }catch(e){
-      console.warn('Supabase login unavailable:', e.message);
-      logActivity(`Failed login attempt (Supabase unavailable): ${email}`, 'login_failed');
-    }
-  }
-
-  // Fallback to local storage if Supabase not configured or fails
-  const stored = localStorage.getItem('ksg_users');
-  const users = stored ? JSON.parse(stored) : [
-    {email:'rollstechsolutions@gmail.com',pass:'7mbeche#',name:'Rolls Tech Solutions',role:'superadmin',status:'active'},
-    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin',status:'active'},
-    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin',status:'active'}
-  ];
-  const localUser = users.find(u=>u.email===email&&u.pass===pass);
-  if(localUser){
-    if(localUser.status !== 'active'){
-      logActivity(`Failed login attempt (pending approval): ${email}`, 'login_failed');
-      showAuthAlert('login','Your account is pending approval. Please wait for a superadmin to approve your account.','error');
-      return;
-    }
-    STATE.user = { ...localUser, id: localUser.id || `local-${Date.now()}` };
-    localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
-    initApp();
-    logActivity(`User logged in: ${email} (${STATE.user.role})`, 'login');
+  // Supabase is now required - no local fallback
+  if(!KSGSupabase.isConfigured()){
+    showAuthAlert('login','Supabase not configured. Please contact administrator.','error');
     return;
   }
 
-  logActivity(`Failed login attempt (invalid credentials): ${email}`, 'login_failed');
-  showAuthAlert('login','Invalid email or password.','error');
+  try{
+    const sb = KSGSupabase.init();
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(!error && data?.user){
+      await setUserFromSession(data.user);
+      // Check if user status is active
+      if(STATE.user.status !== 'active'){
+        await sb.auth.signOut();
+        logActivity(`Failed login attempt (pending approval): ${email}`, 'login_failed');
+        showAuthAlert('login','Your account is pending approval. Please wait for a superadmin to approve your account.','error');
+        return;
+      }
+      initApp();
+      return;
+    }
+    if(error){
+      console.warn('Supabase login failed:', error.message);
+      logActivity(`Failed login attempt (Supabase error): ${email} - ${error.message}`, 'login_failed');
+      showAuthAlert('login',error.message,'error');
+    }
+  }catch(e){
+    console.warn('Supabase login unavailable:', e.message);
+    logActivity(`Failed login attempt (Supabase unavailable): ${email}`, 'login_failed');
+    showAuthAlert('login','Supabase connection failed. Please check your configuration.','error');
+  }
 }
 
 async function doRegister(){
@@ -1589,71 +1566,63 @@ async function doRegister(){
   const pass=document.getElementById('reg-pass').value;
   if(!name||!email||!pass){ showAuthAlert('reg','All fields are required.','error'); return; }
   if(pass.length<8){ showAuthAlert('reg','Password must be at least 8 characters.','error'); return; }
-  if(KSGSupabase.isConfigured()){
-    try{
-      const sb = KSGSupabase.init();
-      const { data, error } = await sb.auth.signUp({
-        email, 
-        password: pass,
-        options: { 
-          data: { full_name: name, role: 'admin' },
-          emailRedirectTo: window.location.href
-        }
-      });
-      if(error){ 
-        logActivity(`Registration failed: ${email} - ${error.message}`, 'registration_failed');
-        // Handle rate limit error specifically
-        if(error.message && error.message.includes('rate limit')) {
-          showAuthAlert('reg','Email rate limit exceeded. Please try again later or contact a superadmin to create your account manually.','error');
-        } else {
-          showAuthAlert('reg', error.message, 'error'); 
-        }
-        return; 
+  
+  // Supabase is now required - no local fallback
+  if(!KSGSupabase.isConfigured()){
+    showAuthAlert('reg','Supabase not configured. Please contact administrator.','error');
+    return;
+  }
+
+  try{
+    const sb = KSGSupabase.init();
+    const { data, error } = await sb.auth.signUp({
+      email, 
+      password: pass,
+      options: { 
+        data: { full_name: name, role: 'admin' },
+        emailRedirectTo: window.location.href
       }
-      logActivity(`Registration submitted: ${email} (${name})`, 'registration_submitted');
-      // Check if email confirmation is required
-      if(data.user && !data.user.email_confirmed_at) {
-        showAuthAlert('reg','Registration successful! Please check your email to confirm your account. After confirmation, wait for superadmin approval.','success');
+    });
+    if(error){ 
+      logActivity(`Registration failed: ${email} - ${error.message}`, 'registration_failed');
+      // Handle rate limit error specifically
+      if(error.message && error.message.includes('rate limit')) {
+        showAuthAlert('reg','Email rate limit exceeded. Please try again later or contact a superadmin to create your account manually.','error');
       } else {
-        showAuthAlert('reg','Account request submitted! A superadmin will review and approve your account.','success');
+        showAuthAlert('reg', error.message, 'error'); 
       }
-      setTimeout(()=>switchAuthTab('login'),4000);
-      return;
-    }catch(e){ 
-      logActivity(`Registration failed: ${email} - ${e.message}`, 'registration_failed');
-      showAuthAlert('reg', e.message||'Registration failed.', 'error'); 
       return; 
     }
+    logActivity(`Registration submitted: ${email} (${name})`, 'registration_submitted');
+    // Check if email confirmation is required
+    if(data.user && !data.user.email_confirmed_at) {
+      showAuthAlert('reg','Registration successful! Please check your email to confirm your account. After confirmation, wait for superadmin approval.','success');
+    } else {
+      showAuthAlert('reg','Account request submitted! A superadmin will review and approve your account.','success');
+    }
+    setTimeout(()=>switchAuthTab('login'),4000);
+  }catch(e){ 
+    logActivity(`Registration failed: ${email} - ${e.message}`, 'registration_failed');
+    showAuthAlert('reg', e.message||'Registration failed.', 'error'); 
   }
-  const stored = localStorage.getItem('ksg_users');
-  const users = stored ? JSON.parse(stored) : [
-    {email:'rollstechsolutions@gmail.com',pass:'7mbeche#',name:'Rolls Tech Solutions',role:'superadmin',status:'active'},
-    {email:'admin@ksg.go.ke',pass:'admin123',name:'KSG Admin',role:'admin',status:'active'},
-    {email:'ksg@embu.com',pass:'embu',name:'EMBU Campus Admin',role:'admin',status:'active'}
-  ];
-  if(users.find(u=>u.email===email)){ 
-    logActivity(`Registration failed (email already exists): ${email}`, 'registration_failed');
-    showAuthAlert('reg','Email already registered.','error'); 
-    return; 
-  }
-  users.push({email,pass,name,role:'admin',status:'pending'});
-  localStorage.setItem('ksg_users', JSON.stringify(users));
-  logActivity(`Registration submitted (local): ${email} (${name})`, 'registration_submitted');
-  showAuthAlert('reg','Account request submitted! A superadmin will review and approve your account.','success');
-  setTimeout(()=>switchAuthTab('login'),3000);
 }
 
 async function doReset(){
   const email=document.getElementById('reset-email').value.trim();
   if(!email){ showAuthAlert('reset','Enter your registered email.','error'); return; }
-  if(KSGSupabase.isConfigured()){
-    try{
-      const sb = KSGSupabase.init();
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
-      if(error){ showAuthAlert('reset', error.message, 'error'); return; }
-    }catch(e){ showAuthAlert('reset', e.message||'Reset failed.', 'error'); return; }
+  
+  // Supabase is now required
+  if(!KSGSupabase.isConfigured()){
+    showAuthAlert('reset','Supabase not configured. Please contact administrator.','error');
+    return;
   }
-  showAuthAlert('reset','If this email is registered, a reset link has been sent.','success');
+
+  try{
+    const sb = KSGSupabase.init();
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + window.location.pathname });
+    if(error){ showAuthAlert('reset', error.message, 'error'); return; }
+    showAuthAlert('reset','If this email is registered, a reset link has been sent.','success');
+  }catch(e){ showAuthAlert('reset', e.message||'Reset failed.', 'error'); }
 }
 
 async function setUserFromSession(authUser){
@@ -1749,14 +1718,14 @@ async function initApp(isRestored = false){
   document.getElementById('user-name-disp').textContent = STATE.user.name || STATE.user.email.split('@')[0];
   document.getElementById('user-role-disp').textContent = STATE.user.role || 'Admin';
   document.getElementById('user-av').textContent = (STATE.user.name||STATE.user.email)[0].toUpperCase();
-  if(KSGDb.enabled()){
-    try{
-      await loadFromSupabase();
-      if(!isRestored) toast('Data synced from Supabase ☁️');
-    }catch(e){
-      toast('Could not load from Supabase: '+e.message, 'error');
-    }
+  
+  try{
+    await loadFromSupabase();
+    if(!isRestored) toast('Data synced from Supabase ☁️');
+  }catch(e){
+    toast('Could not load from Supabase: '+e.message, 'error');
   }
+  
   applySettings();
   refreshTagDataViews();
   updateTagPreviewInit();
@@ -1980,17 +1949,12 @@ async function persistCurrentTag(){
   const data = getTagFormData();
   const ref = data.reference_number;
   const tag={ ...data };
-  if(KSGDb.enabled()){
-    // Remove id field to let Supabase auto-generate UUID
-    delete tag.id;
-    const saved = await KSGDb.insertTag(tag, STATE.user?.email, STATE.user?.id);
-    STATE.tags.unshift(saved);
-    // Reload from Supabase to ensure all admins see the same data
-    await loadFromSupabase();
-  } else {
-    tag.id = Date.now();
-    STATE.tags.unshift(tag);
-  }
+  // Remove id field to let Supabase auto-generate UUID
+  delete tag.id;
+  const saved = await KSGDb.insertTag(tag, STATE.user?.email, STATE.user?.id);
+  STATE.tags.unshift(saved);
+  // Reload from Supabase to ensure all admins see the same data
+  await loadFromSupabase();
   saveLocal();
   STATE.currentPage = 1;
   refreshTagDataViews();
@@ -2438,7 +2402,7 @@ async function saveEdit(){
   t.updated_at = new Date().toISOString();
   
   try {
-    if(KSGDb.enabled()) await KSGDb.updateTag(t);
+    await KSGDb.updateTag(t);
     // Reload from Supabase to ensure all admins see the same data
     await loadFromSupabase();
     saveLocal();
@@ -2515,9 +2479,9 @@ async function confirmDelete(){
   const id=STATE.deleteTarget;
   const t=STATE.tags.find(x=>x.id==id);
   try{
-    if(KSGDb.enabled()) await KSGDb.deleteTag(id);
+    await KSGDb.deleteTag(id);
     // Reload from Supabase to ensure all admins see the same data
-    if(KSGDb.enabled()) await loadFromSupabase();
+    await loadFromSupabase();
     STATE.tags=STATE.tags.filter(x=>x.id!=id);
     saveLocal(); refreshTagDataViews();
     if(t) logActivity(`Tag deleted: ${t.full_name} (${t.reference_number}) - Category: ${t.category}`, 'tag_deleted');
@@ -2927,9 +2891,7 @@ function logActivity(msg, action = 'general'){
   STATE.logs.unshift(entry);
   if(STATE.logs.length > 500) STATE.logs = STATE.logs.slice(0, 500);
   saveLocal();
-  if(KSGDb.enabled()) {
-    KSGDb.insertLog(msg, STATE.user?.email, STATE.user?.id, action).catch(e => console.warn('Log sync:', e.message));
-  }
+  KSGDb.insertLog(msg, STATE.user?.email, STATE.user?.id, action).catch(e => console.warn('Log sync:', e.message));
 }
 
 function renderLogs(){
@@ -3054,21 +3016,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function restoreSession(){
-  // Try to restore Supabase session first
-  if(KSGSupabase.isConfigured()){
-    try{
-      const sb = KSGSupabase.init();
-      const { data: { session } } = await sb.auth.getSession();
-      if(session?.user){
-        await setUserFromSession(session.user);
-        if(STATE.user.status === 'active'){
-          initApp(true); // Pass true to indicate restored session
-          return;
-        }
+  // Restore Supabase session
+  try{
+    const sb = KSGSupabase.init();
+    const { data: { session } } = await sb.auth.getSession();
+    if(session?.user){
+      await setUserFromSession(session.user);
+      if(STATE.user.status === 'active'){
+        initApp(true); // Pass true to indicate restored session
+        return;
       }
-    }catch(e){
-      console.warn('Failed to restore Supabase session:', e.message);
     }
+  }catch(e){
+    console.warn('Failed to restore Supabase session:', e.message);
   }
   
   // Fallback to localStorage session
@@ -3105,14 +3065,12 @@ async function clearLogs(){
   
   STATE.logs = [];
   saveLocal();
-  if(KSGDb.enabled()){ 
-    try{ 
-      await KSGDb.clearLogs(STATE.user?.role);
-      logActivity('All activity logs cleared by ' + STATE.user?.email, 'logs_cleared');
-    }catch(e){ 
-      toast('Error: ' + e.message, 'error'); 
-      return; 
-    } 
+  try{ 
+    await KSGDb.clearLogs(STATE.user?.role);
+    logActivity('All activity logs cleared by ' + STATE.user?.email, 'logs_cleared');
+  }catch(e){ 
+    toast('Error: ' + e.message, 'error'); 
+    return; 
   }
   renderLogs(); 
   toast('All logs have been cleared. ✅', 'success');
@@ -3125,7 +3083,7 @@ async function saveSettings(){
   STATE.settings.tagline=document.getElementById('set-tagline').value;
   STATE.settings.gov=document.getElementById('set-gov').value;
   try{
-    if(KSGDb.enabled()) await KSGDb.upsertSettings(STATE.settings);
+    await KSGDb.upsertSettings(STATE.settings);
     saveLocal(); applySettings(); toast('Settings saved!','success');
     logActivity(`System settings updated: ${STATE.settings.sys}`, 'settings_changed');
   }catch(e){ 
@@ -3148,19 +3106,14 @@ async function saveSupabase(){
   localStorage.setItem('ksg_sb_url',url); 
   localStorage.setItem('ksg_sb_key',key);
   
-  // Save to database if connected
-  if(KSGDb.enabled()){
-    try{
-      STATE.settings.supabaseUrl = url;
-      STATE.settings.supabaseAnonKey = key;
-      await KSGDb.upsertSettings(STATE.settings);
-      toast('Supabase config saved to database!','success');
-    }catch(e){
-      toast('Saved locally (database save failed): '+e.message,'warning');
-    }
-  }else{
-    KSGSupabase.init(url, key);
-    toast('Supabase config saved locally!','success');
+  // Save to database
+  try{
+    STATE.settings.supabaseUrl = url;
+    STATE.settings.supabaseAnonKey = key;
+    await KSGDb.upsertSettings(STATE.settings);
+    toast('Supabase config saved to database!','success');
+  }catch(e){
+    toast('Saved locally (database save failed): '+e.message,'warning');
   }
 }
 
@@ -3184,11 +3137,11 @@ function applySettings(){
   ['dark','qr','email','dup','log'].forEach(k=>{ const el=document.getElementById('tgl-'+k); if(el) el.classList.toggle('on',!!STATE.settings[k]); });
 }
 
-function toggleSetting(el,key){ el.classList.toggle('on'); STATE.settings[key]=el.classList.contains('on'); saveLocal(); if(KSGDb.enabled()) KSGDb.upsertSettings(STATE.settings).catch(()=>{}); }
+function toggleSetting(el,key){ el.classList.toggle('on'); STATE.settings[key]=el.classList.contains('on'); saveLocal(); KSGDb.upsertSettings(STATE.settings).catch(()=>{}); }
 
 function toggleDark(){
   STATE.settings.darkMode=!STATE.settings.darkMode; saveLocal();
-  if(KSGDb.enabled()) KSGDb.upsertSettings(STATE.settings).catch(()=>{});
+  KSGDb.upsertSettings(STATE.settings).catch(()=>{});
   document.body.style.background=STATE.settings.darkMode?'#0d1b2a':'';
   toast(STATE.settings.darkMode?'Dark mode on 🌙':'Light mode on ☀️');
 }
@@ -3196,14 +3149,13 @@ function toggleDark(){
 async function clearAllData(){
   if(!confirm('Delete ALL tags? This cannot be undone.')) return;
   try{
-    if(KSGDb.enabled()) await KSGDb.deleteAllTags();
+    await KSGDb.deleteAllTags();
     STATE.tags=[]; saveLocal(); refreshTagDataViews();
     toast('All data cleared.','error'); logActivity('All data cleared by admin');
   }catch(e){ toast('Failed to clear data: '+e.message, 'error'); }
 }
 
 async function loadPendingUsers(){
-  if(!KSGDb.enabled()) return;
   const container = document.getElementById('pending-users-list');
   if(!container) return;
   
@@ -3364,7 +3316,7 @@ const sbKey = dbKey || localKey;
 
 if(sbUrl) document.getElementById('set-sb-url').value=sbUrl;
 if(sbKey) document.getElementById('set-sb-key').value=sbKey;
-if(KSGSupabase.isConfigured()) KSGSupabase.init(sbUrl, sbKey);
+KSGSupabase.init(sbUrl, sbKey);
 // Mandatory Login: Users must always log in
 (async function bootAuth(){
   // Force login - no auto-login from stored session
