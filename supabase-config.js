@@ -80,7 +80,7 @@ window.KSGDb = (function () {
     const client = getClient();
     const { data, error } = await client.from('tags').insert({
       ...tag,
-      created_by: userId,
+      created_by: (userId && userId !== 'system') ? userId : null,
       created_by_email: userEmail
     }).select().single();
     if (error) throw error;
@@ -91,7 +91,7 @@ window.KSGDb = (function () {
     const client = getClient();
     const tagsWithCreator = tags.map(t => ({
       ...t,
-      created_by: userId,
+      created_by: (userId && userId !== 'system') ? userId : null,
       created_by_email: userEmail
     }));
     const { data, error } = await client.from('tags').insert(tagsWithCreator).select();
@@ -122,7 +122,9 @@ window.KSGDb = (function () {
     const client = getClient();
     const { error } = await client.from('activity_logs').insert({
       msg,
-      user_email: userEmail
+      user_email: userEmail,
+      user_id: (userId && userId !== 'system') ? userId : null,
+      action: action
     });
     if (error) console.warn('Log insert failed:', error.message);
   }

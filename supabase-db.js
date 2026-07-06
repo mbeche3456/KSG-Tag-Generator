@@ -40,6 +40,8 @@ window.KSGDb = (function () {
       position: row.position,
       category: row.category,
       id_number: row.id_number,
+      p_number: row.p_number,
+      id_number_value: row.id_number_value,
       status: row.status || 'Active',
       date_generated: row.date_generated,
       updated_at: row.updated_at,
@@ -99,10 +101,12 @@ window.KSGDb = (function () {
       position: tag.position,
       category: tag.category,
       id_number: tag.id_number,
+      p_number: tag.p_number,
+      id_number_value: tag.id_number_value,
       status: tag.status || 'Active',
       date_generated: tag.date_generated || new Date().toISOString(),
       updated_at: tag.updated_at || null,
-      created_by: userId || null,
+      created_by: (userId && userId !== 'system') ? userId : null,
       created_by_email: tag.created_by || userEmail,
     };
 
@@ -180,6 +184,8 @@ window.KSGDb = (function () {
         department: tag.department,
         position: tag.position,
         status: tag.status,
+        p_number: tag.p_number,
+        id_number_value: tag.id_number_value,
         updated_at: new Date().toISOString(),
       })
       .eq('id', tag.id)
@@ -211,7 +217,7 @@ window.KSGDb = (function () {
       user_email: userEmail || 'system',
       time: new Date().toISOString(),
       action: action,
-      user_id: userId,
+      user_id: (userId && userId !== 'system') ? userId : null,
     });
     if (error) throw error;
   }

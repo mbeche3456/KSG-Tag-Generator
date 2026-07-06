@@ -59,6 +59,8 @@ create table if not exists public.tags (
   position text,
   category text,
   id_number text not null,
+  p_number text,
+  id_number_value text,
   status text not null default 'Active',
   date_generated timestamptz not null default now(),
   updated_at timestamptz,
@@ -69,6 +71,10 @@ create table if not exists public.tags (
 create index if not exists tags_date_generated_idx on public.tags (date_generated desc);
 create index if not exists tags_id_number_idx on public.tags (id_number);
 create index if not exists tags_category_idx on public.tags (category);
+
+-- ─── Add missing columns for Staff tags (if they don't exist) ───────────────
+ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS p_number text;
+ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS id_number_value text;
 
 -- ─── Activity logs ──────────────────────────────────────────
 create table if not exists public.activity_logs (
