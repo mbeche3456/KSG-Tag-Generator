@@ -2376,7 +2376,7 @@
 
             <button class="btn btn-outline btn-sm" id="bulk-download-btn">📥 Download Selected Tags (PDF)</button>
 
-            <button class="btn btn-danger btn-sm" id="bulk-delete-btn" onclick="deleteSelectedTags()" disabled>🗑️ Delete Selected</button>
+            <button class="btn btn-outline btn-sm" id="bulk-delete-btn" onclick="downloadSelectedTags()" disabled>📥 Download Selected Tags</button>
 
             <button class="btn btn-gold btn-sm" onclick="exportAll()">📥 Export CSV</button>
 
@@ -4929,7 +4929,7 @@ function updateBulkDownloadButton(){
   const deleteBtn = document.getElementById('bulk-delete-btn');
   if (deleteBtn) {
     deleteBtn.disabled = count === 0;
-    deleteBtn.textContent = count ? `🗑️ Delete Selected (${count})` : '🗑️ Delete Selected';
+    deleteBtn.textContent = count ? `� Download Selected Tags (${count})` : '📥 Download Selected Tags';
   }
 
 }

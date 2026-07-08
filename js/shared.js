@@ -451,10 +451,10 @@ function updateUserUI() {
     navSettings.style.display = STATE.user.role === 'superadmin' ? 'flex' : 'none';
   }
   
-  // Show/hide bulk delete button for superadmins
+  // Show bulk download button for selected tags on manage page
   const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
   if (bulkDeleteBtn) {
-    bulkDeleteBtn.style.display = STATE.user.role === 'superadmin' ? 'inline-flex' : 'none';
+    bulkDeleteBtn.style.display = 'inline-flex';
   }
 }
 
