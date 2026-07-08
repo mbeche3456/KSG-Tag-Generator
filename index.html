@@ -5002,6 +5002,8 @@ function toggleSelectVisible(checked){
 
 }
 
+window.toggleSelectVisible = toggleSelectVisible;
+
 
 
 function clearTagSelection(){
@@ -5026,6 +5028,8 @@ function clearTagSelection(){
 
 }
 
+window.clearTagSelection = clearTagSelection;
+
 
 
 function refreshTagDataViews(){
@@ -5045,6 +5049,8 @@ function refreshTagDataViews(){
   }, 16);
 
 }
+
+window.refreshTagDataViews = refreshTagDataViews;
 
 
 
@@ -5071,6 +5077,8 @@ function filterTags(search){
   }, 150);
 
 }
+
+window.filterTags = filterTags;
 
 
 
@@ -5961,6 +5969,8 @@ async function deleteSelectedTags(){
   }
 }
 
+window.deleteSelectedTags = deleteSelectedTags;
+
 
 
 async function exportPDFReport(){
@@ -6025,6 +6035,8 @@ async function exportPDFReport(){
 
 }
 
+window.exportPDFReport = exportPDFReport;
+
 
 
 // ─── BULK GENERATION ─────────────────────────
@@ -6036,6 +6048,11 @@ function handleDragLeave(){ document.getElementById('drop-zone').classList.remov
 function handleDrop(e){ e.preventDefault(); document.getElementById('drop-zone').classList.remove('dragover'); const f=e.dataTransfer.files[0]; if(f) processBulkFile(f); }
 
 function handleFileUpload(e){ const f=e.target.files[0]; if(f) processBulkFile(f); }
+
+window.handleDragOver = handleDragOver;
+window.handleDragLeave = handleDragLeave;
+window.handleDrop = handleDrop;
+window.handleFileUpload = handleFileUpload;
 
 
 
@@ -6282,6 +6299,8 @@ function generateBulk(){
 
 function clearBulk(){ STATE.bulkData=[]; document.getElementById('bulk-preview-body').innerHTML='<tr><td colspan="3"><div class="empty-state"><div class="empty-icon">📤</div><p>Upload a file to preview data</p></div></td></tr>'; document.getElementById('bulk-count').textContent='0 records'; document.getElementById('bulk-progress').style.display='none'; document.getElementById('bulk-file').value=''; }
 
+window.clearBulk = clearBulk;
+
 
 
 function downloadTemplate(){
@@ -6291,6 +6310,8 @@ function downloadTemplate(){
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='KSG_Bulk_Template.csv'; a.click();
 
 }
+
+window.downloadTemplate = downloadTemplate;
 
 
 
@@ -6392,6 +6413,8 @@ function getTagStats(tags = STATE.tags){
 
 }
 
+window.getTagStats = getTagStats;
+
 
 
 function updateDashboard(){
@@ -6441,6 +6464,8 @@ function updateDashboard(){
   renderCategoryChart('dash-category-chart', stats.categoryCounts);
 
 }
+
+window.updateDashboard = updateDashboard;
 
 
 
@@ -7047,6 +7072,8 @@ function toggleDark(){
 
 }
 
+window.toggleDark = toggleDark;
+
 
 
 async function clearAllData(){
@@ -7326,6 +7353,8 @@ function globalSearch(q){
 // ─── NOTIFICATIONS ────────────────────────────
 
 function showNotif(){ toast(`You have ${STATE.tags.filter(t=>new Date(t.date_generated).toDateString()===new Date().toDateString()).length} tags generated today.`); }
+
+window.showNotif = showNotif;
 
 
 
