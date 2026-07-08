@@ -2432,7 +2432,7 @@
 
             <button class="btn btn-outline btn-sm" id="bulk-download-btn" onclick="downloadSelectedTags()" disabled>📄 Download Selected Tags (PDF)</button>
 
-            <button class="btn btn-danger btn-sm" id="bulk-delete-btn" onclick="deleteSelectedTags()" disabled style="display:none;">🗑️ Delete Selected Tags</button>
+            <button class="btn btn-danger btn-sm" id="bulk-delete-btn" onclick="deleteSelectedTags()" disabled>🗑️ Delete Selected Tags</button>
 
             <button class="btn btn-gold btn-sm" onclick="exportAll()">📥 Export CSV</button>
 
@@ -4979,13 +4979,13 @@ function updateBulkDownloadButton(){
 
   btn.disabled = count === 0;
 
-  btn.textContent = count ? `� Download Selected Tags (${count})` : '📄 Download Selected Tags (PDF)';
+  btn.textContent = count ? `📄 Download Selected Tags (${count})` : '📄 Download Selected Tags (PDF)';
 
   // Update bulk delete button
   const deleteBtn = document.getElementById('bulk-delete-btn');
   if (deleteBtn) {
     deleteBtn.disabled = count === 0;
-    deleteBtn.textContent = count ? `� Download Selected Tags (${count})` : '📥 Download Selected Tags';
+    deleteBtn.textContent = '🗑️ Delete Selected Tags';
   }
 
 }
