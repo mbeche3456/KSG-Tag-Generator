@@ -205,6 +205,22 @@ function reprintTag(id){
 }
 
 // ─── FILTERING ───────────────────────────────
+function filterTags(query) {
+  // If query is provided, update the search input
+  if (query !== undefined) {
+    const searchInput = document.querySelector('#page-manage .search-box input');
+    if (searchInput) {
+      searchInput.value = query;
+    }
+  }
+  
+  // Reset to first page when filtering
+  STATE.currentPage = 1;
+  
+  // Apply filters and re-render
+  renderManageTable();
+}
+
 function applyTagFilters(){
   const q = (document.querySelector('#page-manage .search-box input')?.value || '').toLowerCase();
   const cat = document.getElementById('filter-cat')?.value || '';
@@ -232,19 +248,27 @@ function syncSelectedTags(){
   STATE.selectedTagIds = (STATE.selectedTagIds || []).filter((id) => validIds.has(id));
 }
 
-function updateBulkDownloadButton(){
-  const btn = document.getElementById('bulk-download-btn');
-  if (!btn) return;
+function updateBulkButtons() {
+  const downloadBtn = document.getElementById('bulk-download-btn');
+  const deleteBtn = document.getElementById('bulk-delete-btn');
   const count = (STATE.selectedTagIds || []).length;
-  btn.disabled = count === 0;
-  btn.textContent = count ? `📄 Download Selected Tags (${count})` : '📄 Download Selected Tags (PDF)';
+  
+  if (downloadBtn) {
+    downloadBtn.disabled = count === 0;
+    downloadBtn.textContent = count ? `📄 Download Selected Tags (${count})` : '📄 Download Selected Tags (PDF)';
+  }
+  
+  if (deleteBtn) {
+    deleteBtn.disabled = count === 0;
+    deleteBtn.textContent = count ? `🗑️ Delete Selected Tags (${count})` : '🗑️ Delete Selected Tags';
+  }
 }
 
 function toggleTagSelection(id, checked){
   const selected = new Set(STATE.selectedTagIds || []);
   if (checked) selected.add(id); else selected.delete(id);
   STATE.selectedTagIds = Array.from(selected);
-  updateBulkDownloadButton();
+  updateBulkButtons();
 
   const selectAllCheckbox = document.getElementById('select-all-visible');
   if (selectAllCheckbox) {
@@ -252,7 +276,7 @@ function toggleTagSelection(id, checked){
   }
 }
 
-function toggleSelectAll(checked){
+function toggleSelectAll(checked) {
   if(checked){
     filteredTags.forEach(t => {
       if(!STATE.selectedTagIds.includes(t.id)){
@@ -262,7 +286,12 @@ function toggleSelectAll(checked){
   } else {
     STATE.selectedTagIds = STATE.selectedTagIds.filter(id => !filteredTags.find(t => t.id === id));
   }
-  updateBulkDownloadButton();
+  updateBulkButtons();
+}
+
+function toggleSelectVisible(checked) {
+  toggleSelectAll(checked);
+  renderManageTable();
 }
 
 // ─── TABLE RENDERING ─────────────────────────
@@ -286,7 +315,7 @@ function renderManageTable(){
     selectAllCheckbox.checked = totalVisible > 0 && filteredTags.every((t) => selectedIds.has(t.id));
   }
 
-  updateBulkDownloadButton();
+  updateBulkButtons();
 
   if(!totalVisible){
     tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📋</div><p>No tags found</p></div></td></tr>';
@@ -361,8 +390,55 @@ function refreshManageTags(){
 }
 
  
+// ─── DELETE SELECTED TAGS ────────────────────
+async function deleteSelectedTags() {
+  const selectedIds = STATE.selectedTagIds || [];
+  
+  console.log('Selected tag IDs to delete:', selectedIds);
+  
+  if(selectedIds.length === 0){
+    toast('Please select at least one tag to delete.', 'warning');
+    return;
+  }
+
+  // Confirm deletion
+  if(!confirm(`Are you sure you want to delete ${selectedIds.length} tag${selectedIds.length !== 1 ? 's' : ''}? This action cannot be undone.`)){
+    return;
+  }
+
+  try{
+    // Delete from Supabase if enabled
+    if (window.KSGDb && window.KSGDb.enabled()) {
+      console.log('Calling KSGDb.deleteTags');
+      await KSGDb.deleteTags(selectedIds);
+      console.log('Deleted from Supabase');
+    }
+    
+    // Always update local state
+    console.log('Updating local state');
+    STATE.tags = STATE.tags.filter(t => !selectedIds.includes(t.id));
+    
+    // Clear selected IDs
+    STATE.selectedTagIds = [];
+    
+    // Save to localStorage
+    saveLocal();
+    
+    // Refresh views
+    console.log('Refreshing views');
+    refreshTagDataViews();
+    
+    logActivity(`Deleted ${selectedIds.length} tag(s)`, 'tags_deleted');
+    toast(`✅ Deleted ${selectedIds.length} tag${selectedIds.length !== 1 ? 's' : ''} successfully!`, 'success');
+    
+  }catch(e){
+    console.error('Error in deleteSelectedTags:', e);
+    toast('Failed to delete tags: ' + (e.message || 'Unknown error'), 'error');
+  }
+}
+
 // ─── DOWNLOAD SELECTED TAGS ──────────────────
-async function downloadSelectedTags(){
+async function downloadSelectedTags() {
   const selectedIds = STATE.selectedTagIds || [];
   
   if(selectedIds.length === 0){
@@ -392,18 +468,34 @@ async function downloadSelectedTags(){
     
     if(!window.html2canvas) throw new Error('Image capture library failed to load.');
 
-    // Create PDF
-    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
-    const pw = pdf.internal.pageSize.getWidth();
-    const ph = pdf.internal.pageSize.getHeight();
-    const imgW = 86;
+    // Create PDF - Landscape A4 for 3x3 grid
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pageWidth = pdf.internal.pageSize.getWidth();  // 297mm
+    const pageHeight = pdf.internal.pageSize.getHeight(); // 210mm
+    
+    // Grid settings: 3 columns, 3 rows
+    const cols = 3;
+    const rows = 3;
+    const margin = 10; // mm
+    const colGap = 8;  // Gap between columns
+    const rowGap = 8;  // Gap between rows
+    
+    // Calculate tag dimensions
+    const availableWidth = pageWidth - (margin * 2);
+    const availableHeight = pageHeight - (margin * 2);
+    const tagWidth = (availableWidth - (colGap * (cols - 1))) / cols;
+    const estimatedTagHeight = (tagWidth / 510) * 317; // Maintain aspect ratio of 510x317
 
     // Create temporary container for rendering tags
     const tempContainer = document.createElement('div');
     tempContainer.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:510px;height:317px;';
     document.body.appendChild(tempContainer);
 
-    // Process each selected tag
+    // Store canvas images for layout
+    const canvases = [];
+    let firstCanvasHeight = 0;
+
+    // Process each selected tag and capture to canvas
     for(let i = 0; i < selectedTags.length; i++){
       const t = selectedTags[i];
       
@@ -412,7 +504,7 @@ async function downloadSelectedTags(){
       tempContainer.innerHTML = tagHTML;
       
       // Wait for rendering
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 50));
       
       // Capture tag element
       const tagEl = tempContainer.querySelector('.id-tag');
@@ -441,14 +533,34 @@ async function downloadSelectedTags(){
         },
       });
 
-      // Add to PDF
-      const imgH = (canvas.height / canvas.width) * imgW;
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pw - imgW) / 2, (ph - imgH) / 2, imgW, imgH);
+      canvases.push(canvas);
       
-      // Add new page for next tag (except for the last one)
-      if(i < selectedTags.length - 1){
-        pdf.addPage([90, 56], 'landscape');
+      // Calculate height from first canvas to maintain aspect ratio
+      if(i === 0){
+        firstCanvasHeight = (canvas.height / canvas.width) * tagWidth;
       }
+    }
+
+    // Arrange canvases in 3x3 grid on PDF pages
+    const tagsPerPage = cols * rows; // 9 tags per page
+    for(let i = 0; i < canvases.length; i++){
+      // Add new page if needed (except for the first tag)
+      if(i > 0 && i % tagsPerPage === 0){
+        pdf.addPage();
+      }
+
+      // Calculate position in grid
+      const positionOnPage = i % tagsPerPage;
+      const colIndex = positionOnPage % cols;
+      const rowIndex = Math.floor(positionOnPage / cols);
+
+      // Calculate x and y coordinates
+      const x = margin + (colIndex * (tagWidth + colGap));
+      const y = margin + (rowIndex * (firstCanvasHeight + rowGap));
+
+      // Add image to PDF
+      const imgData = canvases[i].toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', x, y, tagWidth, firstCanvasHeight);
     }
 
     // Clean up
@@ -460,8 +572,8 @@ async function downloadSelectedTags(){
     
     pdf.save(filename);
     
-    logActivity(`Downloaded ${selectedTags.length} tag(s) as PDF`, 'tags_downloaded');
-    toast(`✅ Downloaded ${selectedTags.length} tag${selectedTags.length !== 1 ? 's' : ''} successfully!`, 'success');
+    logActivity(`Downloaded ${selectedTags.length} tag(s) as PDF (${Math.ceil(selectedTags.length / 9)} page${Math.ceil(selectedTags.length / 9) !== 1 ? 's' : ''})`, 'tags_downloaded');
+    toast(`✅ Downloaded ${selectedTags.length} tag${selectedTags.length !== 1 ? 's' : ''} in ${Math.ceil(selectedTags.length / 9)} page${Math.ceil(selectedTags.length / 9) !== 1 ? 's' : ''}!`, 'success');
     
   }catch(e){
     toast('Failed to download tags: ' + (e.message || 'Unknown error'), 'error');
@@ -481,12 +593,15 @@ window.saveEdit = saveEdit;
 window.deleteTag = deleteTag;
 window.confirmDelete = confirmDelete;
 window.reprintTag = reprintTag;
+window.filterTags = filterTags;
 window.applyTagFilters = applyTagFilters;
 window.toggleTagSelection = toggleTagSelection;
 window.toggleSelectAll = toggleSelectAll;
+window.toggleSelectVisible = toggleSelectVisible;
 window.renderManageTable = renderManageTable;
 window.goPage = goPage;
 window.refreshManageTags = refreshManageTags;
 window.buildTagHTML = buildTagHTML;
 window.downloadSelectedTags = downloadSelectedTags;
+window.deleteSelectedTags = deleteSelectedTags;
  

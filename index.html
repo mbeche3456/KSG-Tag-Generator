@@ -3213,6 +3213,7 @@ if(window.supabase && window.supabase.createClient){
       // Show app
       document.getElementById('auth-screen').style.display='none';
       document.getElementById('app').style.display='block';
+      document.getElementById('main-footer').style.display='block';
       applySettings();
       updateUserUI();
       refreshTagDataViews();
@@ -3229,6 +3230,7 @@ if(window.supabase && window.supabase.createClient){
   // Show auth screen - login is required for everyone
   document.getElementById('auth-screen').style.display='flex';
   document.getElementById('app').style.display='none';
+  document.getElementById('main-footer').style.display='none';
 })();
 
 // Init bulk gen actions visibility
@@ -7475,6 +7477,7 @@ if(window.supabase && window.supabase.createClient){
   document.getElementById('auth-screen').style.display='flex';
 
   document.getElementById('app').style.display='none';
+  document.getElementById('main-footer').style.display='none';
 
 })();
 
@@ -7798,7 +7801,7 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 
 
 
-<footer class="sticky-footer">
+<footer id="main-footer" class="sticky-footer">
 
   Copyright &copy; <span id="copyright-year">2026</span> Roy Mbeche. All Rights Reserved.
 

@@ -203,6 +203,25 @@ window.KSGDb = (function () {
     invalidateCache();
   }
 
+  async function deleteTags(ids) {
+    const sb = db();
+    console.log('Deleting tags with IDs:', ids);
+    
+    // Ensure ids is a valid non-empty array
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new Error('No tag IDs provided for deletion');
+    }
+    
+    const { error } = await sb.from('tags').delete().in('id', ids);
+    if (error) {
+      console.error('Supabase delete error:', error);
+      throw error;
+    }
+    
+    invalidateCache();
+    console.log('Successfully deleted tags');
+  }
+
   async function deleteAllTags() {
     const sb = db();
     const { error } = await sb.from('tags').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -303,6 +322,7 @@ window.KSGDb = (function () {
     insertTags,
     updateTag,
     deleteTag,
+    deleteTags,
     deleteAllTags,
     insertLog,
     getLogs,

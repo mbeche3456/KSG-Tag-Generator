@@ -144,9 +144,14 @@ function load() {
   if (STATE.user) {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    document.getElementById('main-footer').style.display = 'block';
     updateUserUI();
     refreshTagDataViews();
     startInactivityTimer();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('main-footer').style.display = 'none';
   }
 }
 
@@ -255,9 +260,10 @@ async function doLogin() {
     // Load data from Supabase
     await loadFromSupabase();
     
-    // Show app, hide auth
+    // Show app, hide auth and footer
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    document.getElementById('main-footer').style.display = 'block';
     
     // Update UI
     updateUserUI();
@@ -406,9 +412,10 @@ async function doLogout() {
   STATE.user = null;
   localStorage.removeItem('ksg_user');
   
-  // Show auth screen
+  // Show auth screen, hide app and footer
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
+  document.getElementById('main-footer').style.display = 'none';
   
   toast('Logged out successfully', 'success');
 }
@@ -451,10 +458,10 @@ function updateUserUI() {
     navSettings.style.display = STATE.user.role === 'superadmin' ? 'flex' : 'none';
   }
   
-  // Show bulk download button for selected tags on manage page
+  // Show bulk buttons for selected tags on manage page
   const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
   if (bulkDeleteBtn) {
-    bulkDeleteBtn.style.display = 'inline-flex';
+    bulkDeleteBtn.style.display = STATE.user?.role === 'superadmin' ? 'inline-flex' : 'none';
   }
 }
 
