@@ -361,6 +361,119 @@ function refreshManageTags(){
 }
 
  
+// ─── DOWNLOAD SELECTED TAGS ──────────────────
+async function downloadSelectedTags(){
+  const selectedIds = STATE.selectedTagIds || [];
+  
+  if(selectedIds.length === 0){
+    toast('Please select at least one tag to download.', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('bulk-download-btn');
+  const originalText = btn?.textContent;
+  if(btn){
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating PDF...';
+  }
+
+  try{
+    // Get selected tags
+    const selectedTags = STATE.tags.filter(t => selectedIds.includes(t.id));
+    
+    if(selectedTags.length === 0){
+      toast('Selected tags not found.', 'error');
+      return;
+    }
+
+    // Get jsPDF library
+    const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
+    if(!JsPDF) throw new Error('PDF library failed to load. Check your internet connection.');
+    
+    if(!window.html2canvas) throw new Error('Image capture library failed to load.');
+
+    // Create PDF
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const imgW = 86;
+
+    // Create temporary container for rendering tags
+    const tempContainer = document.createElement('div');
+    tempContainer.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:510px;height:317px;';
+    document.body.appendChild(tempContainer);
+
+    // Process each selected tag
+    for(let i = 0; i < selectedTags.length; i++){
+      const t = selectedTags[i];
+      
+      // Build tag HTML
+      const tagHTML = buildTagHTML(t);
+      tempContainer.innerHTML = tagHTML;
+      
+      // Wait for rendering
+      await new Promise(r => setTimeout(r, 100));
+      
+      // Capture tag element
+      const tagEl = tempContainer.querySelector('.id-tag');
+      if(!tagEl) continue;
+
+      const canvas = await html2canvas(tagEl, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: 510,
+        height: 317,
+        onclone: (clonedDoc, clonedEl) => {
+          clonedEl.style.background = 'none';
+          const bg = clonedDoc.createElement('img');
+          bg.src = 'template.png';
+          bg.alt = '';
+          bg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:fill;z-index:0;pointer-events:none';
+          bg.onerror = () => { bg.style.display = 'none'; clonedEl.style.background = '#ffffff'; };
+          clonedEl.insertBefore(bg, clonedEl.firstChild);
+          clonedEl.querySelectorAll('.tag-content, [id^="pt-"], .tag-name, .tag-dept, .tag-position, .tag-org-name').forEach(node=>{
+            node.style.position = node.style.position || 'absolute';
+            node.style.zIndex = '2';
+          });
+        },
+      });
+
+      // Add to PDF
+      const imgH = (canvas.height / canvas.width) * imgW;
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', (pw - imgW) / 2, (ph - imgH) / 2, imgW, imgH);
+      
+      // Add new page for next tag (except for the last one)
+      if(i < selectedTags.length - 1){
+        pdf.addPage([90, 56], 'landscape');
+      }
+    }
+
+    // Clean up
+    document.body.removeChild(tempContainer);
+
+    // Generate filename with count
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const filename = `KSG-Tags-Batch-${selectedTags.length}-${timestamp}.pdf`;
+    
+    pdf.save(filename);
+    
+    logActivity(`Downloaded ${selectedTags.length} tag(s) as PDF`, 'tags_downloaded');
+    toast(`✅ Downloaded ${selectedTags.length} tag${selectedTags.length !== 1 ? 's' : ''} successfully!`, 'success');
+    
+  }catch(e){
+    toast('Failed to download tags: ' + (e.message || 'Unknown error'), 'error');
+    console.error('Download error:', e);
+  } finally {
+    if(btn){
+      btn.disabled = selectedIds.length === 0;
+      btn.textContent = originalText || '📄 Download Selected Tags (PDF)';
+    }
+  }
+}
+
 // Export functions for global access
 window.viewTag = viewTag;
 window.editTag = editTag;
@@ -375,4 +488,5 @@ window.renderManageTable = renderManageTable;
 window.goPage = goPage;
 window.refreshManageTags = refreshManageTags;
 window.buildTagHTML = buildTagHTML;
+window.downloadSelectedTags = downloadSelectedTags;
  

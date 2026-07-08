@@ -1196,6 +1196,62 @@
 
 
 
+  /* ─── FOOTER ─── */
+
+  footer.sticky-footer {
+
+    position: fixed;
+
+    bottom: 0;
+
+    left: 0;
+
+    right: 0;
+
+    background: var(--ksg-dark);
+
+    color: var(--ksg-cream);
+
+    padding: 16px 24px;
+
+    text-align: center;
+
+    font-size: 0.85rem;
+
+    border-top: 1px solid var(--ksg-gold);
+
+    box-shadow: 0 -2px 12px rgba(10, 22, 40, 0.15);
+
+    z-index: 100;
+
+    margin-left: var(--sidebar-w);
+
+    transition: all 0.3s ease;
+
+  }
+
+  footer.sticky-footer a {
+
+    color: var(--ksg-gold);
+
+    text-decoration: none;
+
+    transition: color 0.2s;
+
+  }
+
+  footer.sticky-footer a:hover {
+
+    color: var(--ksg-gold-light);
+
+    text-decoration: underline;
+
+  }
+
+  body { margin-bottom: 56px; }
+
+
+
   /* ─── TOAST ─── */
 
   #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
@@ -1266,7 +1322,7 @@
 
     /* Footer mobile */
 
-    footer { margin-left: 0 !important; }
+    footer.sticky-footer { margin-left: 0 !important; padding: 12px 16px; font-size: 0.78rem; }
 
     
 
@@ -2374,9 +2430,7 @@
 
             </select>
 
-            <button class="btn btn-outline btn-sm" id="bulk-download-btn">📥 Download Selected Tags (PDF)</button>
-
-            <button class="btn btn-outline btn-sm" id="bulk-delete-btn" onclick="downloadSelectedTags()" disabled>📥 Download Selected Tags</button>
+            <button class="btn btn-outline btn-sm" id="bulk-download-btn" onclick="downloadSelectedTags()" disabled>📄 Download Selected Tags (PDF)</button>
 
             <button class="btn btn-gold btn-sm" onclick="exportAll()">📥 Export CSV</button>
 
@@ -7744,9 +7798,19 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 
 <footer class="sticky-footer">
 
-  Copyright © 2026 Roy Mbeche. All Rights Reserved.
+  Copyright &copy; <span id="copyright-year">2026</span> Roy Mbeche. All Rights Reserved.
 
 </footer>
+
+
+
+<script>
+
+  // Set copyright year dynamically
+
+  document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
+</script>
 
 </body>
 
