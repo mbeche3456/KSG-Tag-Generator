@@ -12,11 +12,8 @@ function buildTagHTML(t){
   const cat = t.category || '';
   const p_number = t.p_number || '';
   const id_number_value = t.id_number_value || '';
-<<<<<<< HEAD
-  let nameTop, deptTop, categoryHtml, pnoHtml = '', idnoHtml = '', deptHtml, nameDisplay, nameStyle;
-=======
-  let nameTop, deptTop, categoryHtml, pnoHtml, idnoHtml, deptHtml, nameDisplay, nameStyle;
->>>>>>> 12ff544 (Initial commit)
+
+  let nameTop, deptTop, categoryHtml, pnoHtml = '', idnoHtml = '', deptHtml, nameDisplay, nameStyle; 
 
   if (cat === 'Staff') {
     const staffState = window.STAFF_STATE || STAFF_DEFAULTS;
@@ -38,11 +35,7 @@ function buildTagHTML(t){
     nameTop = '183px';
     deptTop = '269px';
     categoryHtml = `<div class="tag-position">${cat.toUpperCase()}</div>`;
-<<<<<<< HEAD
-=======
-    pnoHtml = '';
-    idnoHtml = '';
->>>>>>> 12ff544 (Initial commit)
+ 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
     nameDisplay = (t.full_name||'').toUpperCase();
     nameStyle = `top: ${nameTop} !important;`;
@@ -51,11 +44,7 @@ function buildTagHTML(t){
     nameTop = '195px';
     deptTop = '249px';
     categoryHtml = '';
-<<<<<<< HEAD
-=======
-    pnoHtml = '';
-    idnoHtml = '';
->>>>>>> 12ff544 (Initial commit)
+ 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
     nameDisplay = (t.full_name||'').toUpperCase();
     nameStyle = `top: ${nameTop} !important;`;
@@ -64,11 +53,7 @@ function buildTagHTML(t){
     nameTop = '183px';
     deptTop = '269px';
     categoryHtml = `<div class="tag-position">${cat.toUpperCase()}</div>`;
-<<<<<<< HEAD
-=======
-    pnoHtml = '';
-    idnoHtml = '';
->>>>>>> 12ff544 (Initial commit)
+ 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
     nameDisplay = (t.full_name||'').toUpperCase();
     nameStyle = `top: ${nameTop} !important;`;
@@ -77,11 +62,7 @@ function buildTagHTML(t){
     nameTop = '195px';
     deptTop = '249px';
     categoryHtml = '';
-<<<<<<< HEAD
-=======
-    pnoHtml = '';
-    idnoHtml = '';
->>>>>>> 12ff544 (Initial commit)
+ 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
     nameDisplay = (t.full_name||'').toUpperCase();
     nameStyle = `top: ${nameTop} !important;`;
@@ -379,172 +360,7 @@ function refreshManageTags(){
   renderManageTable();
 }
 
-<<<<<<< HEAD
-=======
-// Initialize manage tags page when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  // Search and filter event listeners
-  const searchInput = document.querySelector('#page-manage .search-box input');
-  const filterCat = document.getElementById('filter-cat');
-  const filterStatus = document.getElementById('filter-status');
-  
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      applyTagFilters();
-      renderManageTable();
-    });
-  }
-  
-  if (filterCat) {
-    filterCat.addEventListener('change', () => {
-      applyTagFilters();
-      renderManageTable();
-    });
-  }
-  
-  if (filterStatus) {
-    filterStatus.addEventListener('change', () => {
-      applyTagFilters();
-      renderManageTable();
-    });
-  }
-});
-
-// ─── FILTER TAGS ───────────────────────────────
-function filterTags(query = '') {
-  applyTagFilters();
-  const searchQuery = (query || document.querySelector('#page-manage .search-box input')?.value || '').toLowerCase();
-  
-  filteredTags = filteredTags.filter(tag => 
-    tag.full_name.toLowerCase().includes(searchQuery) ||
-    tag.id_number.toLowerCase().includes(searchQuery) ||
-    (tag.department || '').toLowerCase().includes(searchQuery) ||
-    (tag.reference_number || '').toLowerCase().includes(searchQuery)
-  );
-  
-  renderManageTable();
-}
-
-// ─── TOGGLE SELECT ALL VISIBLE TAGS ─────────────
-function toggleSelectVisible(checked) {
-  filteredTags.forEach(tag => {
-    const selectedSet = new Set(STATE.selectedTagIds || []);
-    if (checked) {
-      selectedSet.add(tag.id);
-    } else {
-      selectedSet.delete(tag.id);
-    }
-    STATE.selectedTagIds = Array.from(selectedSet);
-  });
-  updateBulkDownloadButton();
-  renderManageTable();
-}
-
-// ─── DOWNLOAD SELECTED TAGS AS PDF ──────────────
-async function downloadSelectedTags() {
-  const selectedTags = (STATE.selectedTagIds || []).map(id => 
-    STATE.tags.find(t => t.id === id)
-  ).filter(Boolean);
-  
-  if (!selectedTags.length) {
-    toast('Please select at least one tag to download', 'error');
-    return;
-  }
-  
-  toast(`Preparing ${selectedTags.length} tags for download...`, 'info');
-  
-  try {
-    const JsPDF = window.jspdf?.jsPDF || window.jsPDF;
-    if (!JsPDF) throw new Error('PDF library not loaded');
-    
-    const pdf = new JsPDF({
-      orientation: 'landscape',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    const margin = 5;
-    
-    // Split tags into chunks of exactly 9 per page
-    const pageChunks = [];
-    for (let i = 0; i < selectedTags.length; i += 9) {
-      pageChunks.push(selectedTags.slice(i, i + 9));
-    }
-    
-    // Process each page
-    for (let pageIndex = 0; pageIndex < pageChunks.length; pageIndex++) {
-      const pageTags = pageChunks[pageIndex];
-      
-      // Create a container for this page's tags - A4 landscape at 150 DPI for clarity
-      const tempContainer = document.createElement('div');
-      tempContainer.style.display = 'grid';
-      tempContainer.style.gridTemplateColumns = 'repeat(3, 1fr)';
-      tempContainer.style.gridTemplateRows = 'repeat(3, 1fr)';
-      tempContainer.style.gap = '12px';
-      tempContainer.style.padding = '15px';
-      tempContainer.style.background = 'white';
-      tempContainer.style.width = '1754px'; // A4 landscape width at 150 DPI (297mm * 150/25.4)
-      tempContainer.style.height = '1240px'; // A4 landscape height at 150 DPI (210mm * 150/25.4)
-      tempContainer.style.boxSizing = 'border-box';
-      
-      // Add tags to container
-      pageTags.forEach(tag => {
-        const cellDiv = document.createElement('div');
-        cellDiv.style.display = 'flex';
-        cellDiv.style.alignItems = 'center';
-        cellDiv.style.justifyContent = 'center';
-        
-        const tagDiv = document.createElement('div');
-        tagDiv.innerHTML = buildTagHTML(tag);
-        const tagEl = tagDiv.firstElementChild;
-        if (tagEl) {
-          // Scale tag to fit cell
-          tagEl.style.transform = 'scale(0.9)';
-          tagEl.style.transformOrigin = 'center center';
-        }
-        cellDiv.appendChild(tagDiv);
-        tempContainer.appendChild(cellDiv);
-      });
-      
-      document.body.appendChild(tempContainer);
-      
-      // Capture the page
-      const canvas = await html2canvas(tempContainer, {
-        scale: 1,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-      });
-      
-      document.body.removeChild(tempContainer);
-      
-      // Add page to PDF (not for first page, which is already there)
-      if (pageIndex > 0) {
-        pdf.addPage();
-      }
-      
-      // Add captured image to PDF
-      const imgWidth = pageWidth - 2 * margin;
-      const imgHeight = (canvas.height / canvas.width) * imgWidth;
-      const imgY = (pageHeight - imgHeight) / 2; // Center vertically
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin, imgY, imgWidth, imgHeight);
-    }
-    
-    pdf.save(`KSG-Tags-${new Date().toISOString().split('T')[0]}.pdf`);
-    
-    toast('Tags downloaded successfully!', 'success');
-    logActivity(`Downloaded ${selectedTags.length} selected tags`, 'download');
-    
-  } catch (e) {
-    toast('Failed to download tags: ' + e.message, 'error');
-    console.error(e);
-  }
-}
-
->>>>>>> 12ff544 (Initial commit)
+ 
 // Export functions for global access
 window.viewTag = viewTag;
 window.editTag = editTag;
@@ -559,9 +375,4 @@ window.renderManageTable = renderManageTable;
 window.goPage = goPage;
 window.refreshManageTags = refreshManageTags;
 window.buildTagHTML = buildTagHTML;
-<<<<<<< HEAD
-=======
-window.filterTags = filterTags;
-window.toggleSelectVisible = toggleSelectVisible;
-window.downloadSelectedTags = downloadSelectedTags;
->>>>>>> 12ff544 (Initial commit)
+ 

@@ -25,7 +25,7 @@ const STAFF_DEFAULTS = {
   'pt-idno':    {ff:'Trebuchet MS', size:21, w:600, ls:0.3, top:271, left:32, color:'#000000', bg:false},
 };
 
-<<<<<<< HEAD
+
 function applyLivePreviewStyles(){
   const styleState = window.TEXT_STYLE_STATE || window.STAFF_STATE;
   if (!styleState) return;
@@ -61,10 +61,7 @@ function applyLivePreviewStyles(){
   };
 
   ['pt-name', 'pt-position', 'pt-pno', 'pt-idno', 'pt-dept', 'pt-orgname'].forEach(applyStyle);
-}
-
-=======
->>>>>>> 12ff544 (Initial commit)
+} 
 // ─── PREVIEW UPDATE ─────────────────────────────
 function updatePreview(){
   if (previewRenderHandle) {
@@ -90,11 +87,8 @@ function updatePreview(){
     const { nameEl, deptEl, posEl, catEl, pnoEl, idnoEl, ptName, ptDept, ptPos, ptPno, ptIdno } = PREVIEW_REFS;
     if(!nameEl || !deptEl || !posEl || !catEl || !ptName || !ptDept || !ptPos) return;
 
-<<<<<<< HEAD
-    applyLivePreviewStyles();
 
-=======
->>>>>>> 12ff544 (Initial commit)
+    applyLivePreviewStyles(); 
     const name = nameEl.value.trim();
     const dept = deptEl.value || 'DEPARTMENT';
     const pos = posEl.value.trim();
@@ -136,81 +130,34 @@ function updatePreview(){
       ptIdno.innerHTML = `ID/No: <span style="margin-left: 2px;">${idno || ''}</span>`;
       ptIdno.style.display = 'block';
 
-<<<<<<< HEAD
-=======
-      // Apply Staff-specific styling from state
-      const staffState = window.STAFF_STATE || STAFF_DEFAULTS;
-
-      ptName.style.top = staffState['pt-name'].top + 'px';
-      ptName.style.left = staffState['pt-name'].left + 'px';
-      ptName.style.fontSize = staffState['pt-name'].size + 'px';
-      ptName.style.fontWeight = staffState['pt-name'].w;
-      ptName.style.letterSpacing = staffState['pt-name'].ls + 'px';
-      ptName.style.transform = 'none';
-      ptName.style.textAlign = 'left';
-
-      ptPno.style.top = staffState['pt-pno'].top + 'px';
-      ptPno.style.left = staffState['pt-pno'].left + 'px';
-      ptPno.style.fontSize = staffState['pt-pno'].size + 'px';
-      ptPno.style.fontWeight = staffState['pt-pno'].w;
-      ptPno.style.letterSpacing = staffState['pt-pno'].ls + 'px';
-      ptPno.style.fontFamily = staffState['pt-pno'].ff;
-      ptPno.style.transform = 'none';
-      ptPno.style.textAlign = 'left';
-
-      ptIdno.style.top = staffState['pt-idno'].top + 'px';
-      ptIdno.style.left = staffState['pt-idno'].left + 'px';
-      ptIdno.style.fontSize = staffState['pt-idno'].size + 'px';
-      ptIdno.style.fontWeight = staffState['pt-idno'].w;
-      ptIdno.style.letterSpacing = staffState['pt-idno'].ls + 'px';
-      ptIdno.style.fontFamily = staffState['pt-idno'].ff;
-      ptIdno.style.transform = 'none';
-      ptIdno.style.textAlign = 'left';
-
->>>>>>> 12ff544 (Initial commit)
+ 
       ptDept.style.display = 'none';
     } else if (cat === 'Attachee') {
       ptPos.textContent = cat.toUpperCase();
       ptPos.style.display = 'block';
       ptPno.style.display = 'none';
       ptIdno.style.display = 'none';
-<<<<<<< HEAD
-=======
-      ptName.style.top = '183px';
-      ptDept.style.top = '269px';
->>>>>>> 12ff544 (Initial commit)
+ 
       ptDept.style.display = 'block';
     } else if (cat === 'Intern') {
       ptPos.textContent = '';
       ptPos.style.display = 'none';
       ptPno.style.display = 'none';
       ptIdno.style.display = 'none';
-<<<<<<< HEAD
-=======
-      ptName.style.top = '195px';
-      ptDept.style.top = '249px';
->>>>>>> 12ff544 (Initial commit)
+ 
       ptDept.style.display = 'block';
     } else if (cat) {
       ptPos.textContent = cat.toUpperCase();
       ptPos.style.display = 'block';
       ptPno.style.display = 'none';
       ptIdno.style.display = 'none';
-<<<<<<< HEAD
-=======
-      ptName.style.top = '183px';
-      ptDept.style.top = '269px';
->>>>>>> 12ff544 (Initial commit)
+ 
     } else {
       ptPos.textContent = '';
       ptPos.style.display = 'none';
       ptPno.style.display = 'none';
       ptIdno.style.display = 'none';
-<<<<<<< HEAD
-=======
-      ptName.style.top = '195px';
-      ptDept.style.top = '249px';
->>>>>>> 12ff544 (Initial commit)
+ 
     }
   });
 }
@@ -224,7 +171,7 @@ function getTagFormData(){
   const idEl = document.getElementById('f-idnum');
   const pnoEl = document.getElementById('f-pno');
   const idnoEl = document.getElementById('f-idno');
-<<<<<<< HEAD
+
 
   if (!currentRef) {
     currentRef = typeof window.genRef === 'function' ? window.genRef() : (typeof genRef === 'function' ? genRef() : 'KSG-0001');
@@ -242,22 +189,7 @@ function getTagFormData(){
   if(!id_number) id_number = currentRef;
 
   return {
-    reference_number: currentRef,
-=======
-  
-  const full_name = nameEl?.value.trim() || '';
-  const department = deptEl?.value || '';
-  const category = catEl?.value || '';
-  let position = category; // Position always depends on category
-  let id_number = idEl?.value.trim() || '';
-  const p_number = pnoEl?.value.trim() || '';
-  const id_number_value = idnoEl?.value.trim() || '';
-  
-  if(!id_number) id_number = currentRef;
-  
-  return {
-    reference_number: genRef(), // Generate new ref for each tag
->>>>>>> 12ff544 (Initial commit)
+    reference_number: currentRef, 
     full_name,
     department,
     category,
@@ -347,7 +279,7 @@ async function persistCurrentTag(){
   const tag={ ...data };
   delete tag.id;
 
-<<<<<<< HEAD
+
   let saved;
   if (KSGDb.enabled()) {
     saved = await KSGDb.insertTag(tag, STATE.user?.email, STATE.user?.id);
@@ -356,57 +288,43 @@ async function persistCurrentTag(){
     saved = { ...tag, id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}` };
     STATE.tags.unshift(saved);
     saveLocal();
-  }
-
-=======
-  const saved = await KSGDb.insertTag(tag, STATE.user?.email, STATE.user?.id);
-  STATE.tags.unshift(saved);
-  await loadFromSupabase();
-  saveLocal();
->>>>>>> 12ff544 (Initial commit)
+  } 
   STATE.currentPage = 1;
   refreshTagDataViews();
   logActivity(`Tag generated: ${tag.full_name} (${ref}) - Category: ${tag.category}`, 'tag_generated');
 
-<<<<<<< HEAD
-  return { tag: saved, ref, name: tag.full_name };
-=======
-  return { tag: STATE.tags[0], ref, name: tag.full_name };
->>>>>>> 12ff544 (Initial commit)
+
+  return { tag: saved, ref, name: tag.full_name }; 
 }
 
 async function saveTagOnly(){
   if(!validateForm()) return;
-<<<<<<< HEAD
+
   const saveBtn = document.getElementById('btn-generate-tag');
   if(saveBtn) {
     saveBtn.disabled = true;
-    saveBtn.textContent = '⏳ Generating...';
-=======
-  const saveBtn = document.querySelector('#page-generate .btn-gold');
-  if(saveBtn) {
-    saveBtn.disabled = true;
-    saveBtn.textContent = '⏳ Saving...';
->>>>>>> 12ff544 (Initial commit)
+    saveBtn.textContent = '⏳ Generating...'; 
   }
 
   try{
     const saved = await persistCurrentTag();
+    // Generate new reference number for next tag
+    currentRef = typeof window.genRef === 'function' ? window.genRef() : (typeof genRef === 'function' ? genRef() : 'KSG-0001');
     updateTagPreviewInit();
     updatePreview();
-    toast(`Tag saved: ${saved.name} (${saved.ref}). View in Manage Tags & Reports.`, 'success');
-    clearForm();
+    toast(`Tag saved: ${saved.name} (${saved.ref}). Ready for next tag.`, 'success');
+    // Clear only name field to allow quick entry of next tag
+    const nameEl = document.getElementById('f-name');
+    if(nameEl) nameEl.value = '';
+    updatePreview();
   }catch(e){
     toast('Failed to save tag: ' + (e.message || 'Unknown error'), 'error');
     console.error(e);
   } finally {
     if(saveBtn) {
       saveBtn.disabled = false;
-<<<<<<< HEAD
-      saveBtn.textContent = '🏷️ Generate Tag';
-=======
-      saveBtn.textContent = '💾 Save Tag';
->>>>>>> 12ff544 (Initial commit)
+
+      saveBtn.textContent = '🏷️ Generate Tag'; 
     }
   }
 }
@@ -531,56 +449,29 @@ async function generateTagPNG(){
 function clearForm(){
   const ids=['f-name','f-idnum','f-position','f-pno','f-idno'];
   const selects=['f-dept','f-cat'];
-<<<<<<< HEAD
-
-=======
-  
->>>>>>> 12ff544 (Initial commit)
+ 
   ids.forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.value='';
   });
-<<<<<<< HEAD
-
-=======
-  
->>>>>>> 12ff544 (Initial commit)
+ 
   selects.forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.selectedIndex=0;
   });
-<<<<<<< HEAD
+
 
   const statusEl=document.getElementById('f-status');
-  if(statusEl) statusEl.selectedIndex=0;
-
-=======
-  
-  const statusEl=document.getElementById('f-status');
-  if(statusEl) statusEl.selectedIndex=0;
-  
->>>>>>> 12ff544 (Initial commit)
+  if(statusEl) statusEl.selectedIndex=0; 
   const errs=['err-name','err-idnum','err-dept','err-position','err-cat','err-pno','err-idno'];
   errs.forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.textContent='';
   });
-<<<<<<< HEAD
+
 
   const inputEls=document.querySelectorAll('.gen-form input, .gen-form select');
-  inputEls.forEach(el=>el.classList.remove('error'));
-
-=======
-  
-  const inputEls=document.querySelectorAll('.gen-form input, .gen-form select');
-  inputEls.forEach(el=>el.classList.remove('error'));
-  
-  // Generate new reference number
-  genRef();
-  const refEl = document.getElementById('ref-display');
-  if (refEl) refEl.textContent = currentRef;
-  
->>>>>>> 12ff544 (Initial commit)
+  inputEls.forEach(el=>el.classList.remove('error')); 
   updatePreview();
   updateTagPreviewInit();
 }
@@ -588,23 +479,21 @@ function clearForm(){
 // ─── STYLING PANEL FUNCTIONS ───────────────────
 // These are placeholder functions - actual implementation would be in a separate styling module
 function applyStaffDefaults(){
-<<<<<<< HEAD
+
   if (typeof window.applyCurrentStyles === 'function') {
     window.applyCurrentStyles();
   }
   if (typeof window.applyStaffDefaults === 'function' && window.applyStaffDefaults !== applyStaffDefaults) {
     window.applyStaffDefaults();
     return;
-  }
-=======
->>>>>>> 12ff544 (Initial commit)
+  } 
   if (!window.STAFF_STATE) {
     window.STAFF_STATE = {...STAFF_DEFAULTS};
   }
 }
 
 function resetToDefaults(){
-<<<<<<< HEAD
+
   if (typeof window.resetToDefaults === 'function' && window.resetToDefaults !== resetToDefaults) {
     window.resetToDefaults();
     return;
@@ -612,41 +501,7 @@ function resetToDefaults(){
   if (typeof window.applyCurrentStyles === 'function') {
     window.applyCurrentStyles();
   }
-}
-
-=======
-  // Reset to default styling for non-Staff categories
-}
-
-// Initialize reference number when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  genRef();
-  const refEl = document.getElementById('ref-display');
-  if (refEl) refEl.textContent = currentRef;
-  
-  // Call toggleStaffFields to initialize staff fields visibility
-  toggleStaffFields();
-  
-  // Update preview on initial load
-  updatePreview();
-  
-  // Add event listeners to form fields for real-time preview
-  const formFields = ['f-name', 'f-dept', 'f-cat', 'f-position', 'f-pno', 'f-idno'];
-  formFields.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', updatePreview);
-      el.addEventListener('change', () => {
-        if (id === 'f-cat') {
-          toggleStaffFields();
-        }
-        updatePreview();
-      });
-    }
-  });
-});
-
->>>>>>> 12ff544 (Initial commit)
+} 
 // Export functions for global access
 window.updatePreview = updatePreview;
 window.toggleStaffFields = toggleStaffFields;

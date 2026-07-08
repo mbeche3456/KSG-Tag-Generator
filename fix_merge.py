@@ -1,4 +1,15 @@
-/* ════════════════════════════════════════════
+
+with open(r'c:\Users\user\Pictures\rolls tag3\js\shared.js', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+import re
+
+# First, resolve the easy conflicts by keeping the "Initial commit" version (the right side)
+# But let's be careful - let's write a clean version from scratch based on what we know
+
+# Let's write a clean shared.js
+
+clean_content = '''/* ════════════════════════════════════════════
    KSG TAG GENERATOR — SHARED JAVASCRIPT
    Common functions, state management, utilities
    ════════════════════════════════════════════ */
@@ -151,37 +162,13 @@ function load() {
 }
 
 // ─── REFERENCE NUMBER GENERATOR ───────────────
-function genRef(usedRefs = []) {
-  const seenRefs = new Set();
-
-  if (Array.isArray(STATE?.tags)) {
-    STATE.tags.forEach((tag) => {
-      if (tag?.reference_number) seenRefs.add(tag.reference_number);
-    });
-  }
-
-  if (Array.isArray(usedRefs)) {
-    usedRefs.forEach((ref) => {
-      if (ref) seenRefs.add(ref);
-    });
-  }
-
+function genRef() {
   const now = new Date();
-  const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-  let counter = Number(window.__ksgRefCounter || 0) + 1;
-
-  for (let attempts = 0; attempts < 100; attempts += 1) {
-    const candidate = `KSG-${stamp}-${String(counter).padStart(4, '0')}`;
-    if (!seenRefs.has(candidate)) {
-      window.__ksgRefCounter = counter;
-      currentRef = candidate;
-      return currentRef;
-    }
-    counter += 1;
-  }
-
-  const fallback = `KSG-${stamp}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-  currentRef = fallback;
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  currentRef = `KSG-${year}${month}${day}-${random}`;
   return currentRef;
 }
 
@@ -616,7 +603,7 @@ function exportAll() {
     formatDate(tag.date_generated)
   ]);
   
-  const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell?.toString().replace(/"/g, '""') || ''}"`).join(','))].join('\n');
+  const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell?.toString().replace(/"/g, '""') || ''}"`).join(','))].join('\\n');
   
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -647,7 +634,7 @@ function exportLogs() {
     log.msg || ''
   ]);
   
-  const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell?.toString().replace(/"/g, '""') || ''}"`).join(','))].join('\n');
+  const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell?.toString().replace(/"/g, '""') || ''}"`).join(','))].join('\\n');
   
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -990,3 +977,9 @@ window.downloadModalPNG = downloadModalPNG;
 window.printModal = printModal;
 window.downloadEditPDF = downloadEditPDF;
 window.captureTagElement = captureTagElement;
+'''
+
+with open(r'c:\Users\user\Pictures\rolls tag3\js\shared.js', 'w', encoding='utf-8') as f:
+    f.write(clean_content)
+
+print('Fixed shared.js successfully!')
