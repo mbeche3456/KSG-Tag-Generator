@@ -1,5 +1,5 @@
-const TAG_W = 526;
-const TAG_H = 325;
+const TAG_W = 510;
+const TAG_H = 317;
 
 const FONT_FAMILIES = [
   "Arial",

@@ -21,11 +21,14 @@
 
   const state = JSON.parse(JSON.stringify(DEFAULTS));
 
+<<<<<<< HEAD
   window.TEXT_STYLE_STATE = state;
   window.TEXT_STYLE_DEFAULTS = DEFAULTS;
   window.TEXT_STYLE_STAFF_DEFAULTS = STAFF_DEFAULTS;
   window.STAFF_DEFAULTS = STAFF_DEFAULTS;
 
+=======
+>>>>>>> 12ff544 (Initial commit)
   function apply(id){
     const el = document.getElementById(id); if(!el) return;
     const s = state[id];
@@ -61,8 +64,11 @@
 
   function applyAll(){ Object.keys(state).forEach(apply); }
 
+<<<<<<< HEAD
   window.applyCurrentStyles = applyAll;
 
+=======
+>>>>>>> 12ff544 (Initial commit)
   function applyStaffDefaults(){
     // Apply Staff-specific defaults to state
     Object.keys(STAFF_DEFAULTS).forEach(key => {
@@ -71,7 +77,10 @@
     });
     // Expose staff state to window for preview to use
     window.STAFF_STATE = {...state};
+<<<<<<< HEAD
     window.TEXT_STYLE_STATE = state;
+=======
+>>>>>>> 12ff544 (Initial commit)
     // Update UI to reflect new values
     loadUI();
   }
@@ -127,7 +136,11 @@
   }
 
   // Drag on preview
+<<<<<<< HEAD
   const TAG_W = 526, TAG_H = 325;
+=======
+  const TAG_W = 510, TAG_H = 317;
+>>>>>>> 12ff544 (Initial commit)
   let dragId=null, ox=0, oy=0;
 
   function bindDrag(){

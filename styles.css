@@ -35,8 +35,8 @@ header p { margin: 0; color: #6b7280; font-size: 14px; }
 .preview { display: flex; justify-content: center; align-items: flex-start; }
 .id-tag {
   position: relative;
-  width: 526px;
-  height: 325px;
+  width: 510px;
+  height: 317px;
   background-image: url('template.png');
   background-size: 100% 100%;
   background-repeat: no-repeat;
