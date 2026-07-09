@@ -30,15 +30,15 @@
 
 <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.1/dist/xlsx.full.min.js"></script>
 
-<script src="js/shared.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/generate-tag.js"></script>
-<script src="js/manage-tags.js"></script>
-<script src="js/bulk-generation.js"></script>
-<script src="js/reports.js"></script>
-<script src="js/settings.js"></script>
-<script src="js/activity-logs.js"></script>
-<script src="js/text-styling.js"></script>
+<script defer src="js/shared.js"></script>
+<script defer src="js/dashboard.js"></script>
+<script defer src="js/generate-tag.js"></script>
+<script defer src="js/manage-tags.js"></script>
+<script defer src="js/bulk-generation.js"></script>
+<script defer src="js/reports.js"></script>
+<script defer src="js/settings.js"></script>
+<script defer src="js/activity-logs.js"></script>
+<script defer src="js/text-styling.js"></script>
 
 <style>
 
@@ -2430,9 +2430,9 @@
 
             </select>
 
-            <button class="btn btn-outline btn-sm" id="bulk-download-btn" onclick="downloadSelectedTags()" disabled>📄 Download Selected Tags (PDF)</button>
+            <button class="btn btn-outline btn-sm" id="bulk-download-btn" disabled>📄 Download Selected Tags (PDF)</button>
 
-            <button class="btn btn-danger btn-sm" id="bulk-delete-btn" onclick="deleteSelectedTags()" disabled>🗑️ Delete Selected Tags</button>
+            <button class="btn btn-danger btn-sm" id="bulk-delete-btn" disabled>🗑️ Delete Selected Tags</button>
 
             <button class="btn btn-gold btn-sm" onclick="exportAll()">📥 Export CSV</button>
 
@@ -3364,15 +3364,19 @@ async function syncToSupabase(){
 
 async function loadFromSupabase(){
 
+  console.log('Loading data from Supabase...');
+
   const data = await KSGDb.loadAll();
 
-  STATE.tags = data.tags;
+  STATE.tags = data.tags || [];
 
-  STATE.logs = data.logs;
+  STATE.logs = data.logs || [];
 
   if(data.settings) STATE.settings = {...STATE.settings, ...data.settings};
 
   saveLocal();
+
+  console.log('Data loaded from Supabase:', STATE.tags.length, 'tags,', STATE.logs.length, 'logs');
 
   return true;
 
@@ -3464,6 +3468,8 @@ async function doLogin(){
 
   if(!email||!pass){ showAuthAlert('login','Please enter email and password.','error'); return; }
 
+  console.log('Attempting login for:', email);
+
 
 
   try{
@@ -3474,11 +3480,17 @@ async function doLogin(){
 
     if(!error && data?.user){
 
+      console.log('Login successful, user:', data.user.email);
+
       await setUserFromSession(data.user);
+
+      console.log('User set in STATE:', STATE.user);
 
       // Check if user status is active
 
       if(STATE.user.status !== 'active'){
+
+        console.log('User status not active:', STATE.user.status);
 
         await sb.auth.signOut();
 
@@ -3489,6 +3501,8 @@ async function doLogin(){
         return;
 
       }
+
+      console.log('User is active, initializing app...');
 
       initApp();
 
@@ -3648,9 +3662,11 @@ async function setUserFromSession(authUser){
 
   };
 
-  localStorage.setItem('ksg_user', JSON.stringify(STATE.user));
+  // Do NOT save to localStorage - user will be logged out on refresh
 
-  
+  console.log('User session set (not persisted to localStorage):', STATE.user.email);
+
+
 
   // Show user management card for superadmins
 
@@ -3784,11 +3800,18 @@ function clearInactivityTracker(){
 
   });
 
+  // Clear all render handles to prevent memory leaks
+  if(dataViewRenderHandle) clearTimeout(dataViewRenderHandle);
+  if(manageRenderHandle) clearTimeout(manageRenderHandle);
+  if(globalSearchTimer) clearTimeout(globalSearchTimer);
+
 }
 
 
 
 async function initApp(isRestored = false){
+
+  console.log('Initializing app, isRestored:', isRestored);
 
   document.getElementById('auth-screen').style.display='none';
 
@@ -3805,15 +3828,28 @@ async function initApp(isRestored = false){
     window.STAFF_STATE = {...STAFF_DEFAULTS};
   }
 
-  
+  console.log('Loading data from Supabase...');
+
+
 
   try{
 
+    // Ensure Supabase client is initialized
+    const sb = KSGSupabase.getClient();
+    if(!sb){
+      console.warn('Supabase client not available, initializing...');
+      KSGSupabase.init();
+    }
+
     await loadFromSupabase();
+
+    console.log('Data loaded from Supabase successfully');
 
     if(!isRestored) toast('Data synced from Supabase ☁️');
 
   }catch(e){
+
+    console.error('Failed to load from Supabase:', e.message, e);
 
     toast('Could not load from Supabase: '+e.message, 'error');
 
@@ -5104,7 +5140,7 @@ function refreshTagDataViews(){
 
     if(document.getElementById('report-stats')) renderReports();
 
-  }, 16);
+  }, 0);
 
 }
 
@@ -5132,7 +5168,7 @@ function filterTags(search){
 
     renderManageTable();
 
-  }, 150);
+  }, 50);
 
 }
 
@@ -6345,7 +6381,8 @@ function generateBulk(){
 
     i++; fill.style.width=((i/total)*100)+'%'; status.textContent=`Processing ${i}/${total}…`;
 
-    setTimeout(step,20);
+    // Process faster - reduce timeout from 20ms to 5ms for better performance
+    setTimeout(step,5);
 
   }
 
@@ -6909,7 +6946,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if(debounceTimer) clearTimeout(debounceTimer);
 
-      debounceTimer = setTimeout(() => renderLogs(), 300);
+      debounceTimer = setTimeout(() => renderLogs(), 150);
 
     });
 
@@ -6927,6 +6964,7 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadBtn.addEventListener('click', function(e) {
       e.preventDefault();
       console.log('Download button clicked');
+      console.log('downloadSelectedTags type:', typeof window.downloadSelectedTags);
       if (typeof window.downloadSelectedTags === 'function') {
         window.downloadSelectedTags();
       } else {
@@ -6936,76 +6974,71 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Attach event listener for delete selected tags button
+  const deleteBtn = document.getElementById('bulk-delete-btn');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('Delete button clicked');
+      console.log('deleteSelectedTags type:', typeof window.deleteSelectedTags);
+      if (typeof window.deleteSelectedTags === 'function') {
+        window.deleteSelectedTags();
+      } else {
+        console.error('deleteSelectedTags is not available');
+        toast('Delete function not loaded. Please refresh the page.', 'error');
+      }
+    });
+  }
+
+  // Log all exported functions for debugging
+  console.log('Window exports check:');
+  console.log('- downloadSelectedTags:', typeof window.downloadSelectedTags);
+  console.log('- deleteSelectedTags:', typeof window.deleteSelectedTags);
+  console.log('- exportPDFReport:', typeof window.exportPDFReport);
+  console.log('- toggleDark:', typeof window.toggleDark);
+  console.log('- showNotif:', typeof window.showNotif);
+  console.log('- filterTags:', typeof window.filterTags);
+  console.log('- handleDragOver:', typeof window.handleDragOver);
+  console.log('- clearBulk:', typeof window.clearBulk);
+  console.log('- downloadTemplate:', typeof window.downloadTemplate);
+  console.log('- getTagStats:', typeof window.getTagStats);
+  console.log('- updateDashboard:', typeof window.updateDashboard);
+  console.log('- toggleSelectVisible:', typeof window.toggleSelectVisible);
+  console.log('- clearTagSelection:', typeof window.clearTagSelection);
+  console.log('- refreshTagDataViews:', typeof window.refreshTagDataViews);
+
 });
 
 
 
 async function restoreSession(){
 
-  // Restore Supabase session
+  console.log('Starting session restore...');
 
-  try{
+  // Clear any existing localStorage session to ensure logout on refresh
+  localStorage.removeItem('ksg_user');
+  console.log('Cleared localStorage session');
 
-    const sb = KSGSupabase.init();
+  // Always log out on refresh - do not restore any session
+  console.log('Logging out user on refresh - returning to login page');
 
-    const { data: { session } } = await sb.auth.getSession();
-
-    if(session?.user){
-
-      await setUserFromSession(session.user);
-
-      if(STATE.user.status === 'active'){
-
-        initApp(true); // Pass true to indicate restored session
-
-        return;
-
-      }
-
+  // Clear Supabase session if exists
+  try {
+    const sb = KSGSupabase.getClient();
+    if (sb) {
+      await sb.auth.signOut();
+      console.log('Supabase session signed out');
     }
-
-  }catch(e){
-
-    console.warn('Failed to restore Supabase session:', e.message);
-
+  } catch (e) {
+    console.warn('Failed to sign out from Supabase:', e.message);
   }
 
-  
+  // Reset user state
+  STATE.user = null;
 
-  // Fallback to localStorage session
-
-  const storedUser = localStorage.getItem('ksg_user');
-
-  if(storedUser){
-
-    try{
-
-      const user = JSON.parse(storedUser);
-
-      if(user.status === 'active'){
-
-        STATE.user = user;
-
-        initApp(true); // Pass true to indicate restored session
-
-        return;
-
-      }
-
-    }catch(e){
-
-      console.warn('Failed to restore local session:', e.message);
-
-    }
-
-  }
-
-  
-
-  // No valid session, show auth screen
-
+  // Show auth screen (login page)
+  console.log('Showing login screen');
   document.getElementById('auth-screen').style.display = 'flex';
-
   document.getElementById('app').style.display = 'none';
 
 }
