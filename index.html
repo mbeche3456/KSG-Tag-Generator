@@ -1208,9 +1208,9 @@
 
     right: 0;
 
-    background: var(--ksg-dark);
+    background: transparent;
 
-    color: var(--ksg-cream);
+    color: black;
 
     padding: 16px 24px;
 
@@ -1765,8 +1765,6 @@
       </div>
 
       <button class="btn-primary" onclick="doLogin()">Sign In to Dashboard</button>
-
-      <p class="auth-note"><a onclick="switchAuthTab('reset')">Forgot your password?</a></p>
 
     </div>
 
@@ -3243,6 +3241,10 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 <script>
 
 const WAVE_SVG_MARKUP = '<svg class="wave-svg" viewBox="0 0 360 225" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="360" height="225" fill="#ffffff"/><path d="M0,0 L360,0 L360,14 Q260,27 172,20 Q88,13 0,23 Z" fill="#CBD300"/><path d="M0,20 Q88,9.6 172,16.8 Q260,24 360,11.2" stroke="#7F622C" stroke-width="1.2" fill="none"/><path d="M0,22.8 Q88,12.4 172,19.6 Q260,26.8 360,14" stroke="#7F622C" stroke-width="0.8" fill="none"/><path d="M0,23.2 Q36,56 24,92 Q14,124 44,156 Q70,182 78,225 L0,225 Z" fill="#CBD300"/><path d="M0,225 L360,225 L360,202 Q260,191.2 172,200 Q88,208.8 0,199.2 Z" fill="#CBD300"/><path d="M0,200 Q88,209.6 172,200.8 Q260,192 360,202.8" stroke="#7F622C" stroke-width="1.2" fill="none"/></svg>';
+
+// Logo image URLs - replace with actual logo paths
+const COA_LOGO = 'about:blank';
+const KSG_LOGO = 'about:blank';
 
 
 
@@ -5422,11 +5424,9 @@ function buildTagHTML(t){
 
     categoryHtml = `<div class="tag-position">${cat.toUpperCase()}</div>`;
 
-    // Always show P/No and ID/No for manage tags and downloads
-
-    pnoHtml = `<div class="tag-pno" style="top: 226px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">P/No: ${p_number || ''}</div>`;
-
-    idnoHtml = `<div class="tag-idno" style="top: 249px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">ID/No: ${id_number_value || ''}</div>`;
+    // Only show P/No and ID/No for Staff category
+    pnoHtml = '';
+    idnoHtml = '';
 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
 
@@ -5442,11 +5442,9 @@ function buildTagHTML(t){
 
     categoryHtml = '';
 
-    // Always show P/No and ID/No for manage tags and downloads
-
-    pnoHtml = `<div class="tag-pno" style="top: 226px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">P/No: ${p_number || ''}</div>`;
-
-    idnoHtml = `<div class="tag-idno" style="top: 249px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">ID/No: ${id_number_value || ''}</div>`;
+    // Only show P/No and ID/No for Staff category
+    pnoHtml = '';
+    idnoHtml = '';
 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
 
@@ -5462,11 +5460,9 @@ function buildTagHTML(t){
 
     categoryHtml = `<div class="tag-position">${cat.toUpperCase()}</div>`;
 
-    // Always show P/No and ID/No for manage tags and downloads
-
-    pnoHtml = `<div class="tag-pno" style="top: 226px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">P/No: ${p_number || ''}</div>`;
-
-    idnoHtml = `<div class="tag-idno" style="top: 249px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">ID/No: ${id_number_value || ''}</div>`;
+    // Only show P/No and ID/No for Staff category
+    pnoHtml = '';
+    idnoHtml = '';
 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
 
@@ -5482,11 +5478,9 @@ function buildTagHTML(t){
 
     categoryHtml = '';
 
-    // Always show P/No and ID/No for manage tags and downloads
-
-    pnoHtml = `<div class="tag-pno" style="top: 226px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">P/No: ${p_number || ''}</div>`;
-
-    idnoHtml = `<div class="tag-idno" style="top: 249px !important; left: 260px !important; font-size: 18px !important; font-weight: 600 !important; letter-spacing: 0.3px !important;">ID/No: ${id_number_value || ''}</div>`;
+    // Only show P/No and ID/No for Staff category
+    pnoHtml = '';
+    idnoHtml = '';
 
     deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
 
@@ -7834,11 +7828,6 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 
 
 
-<footer id="main-footer" class="sticky-footer">
-
-  Copyright &copy; <span id="copyright-year">2026</span> Roy Mbeche. All Rights Reserved.
-
-</footer>
 
 
 
@@ -7849,6 +7838,14 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
   document.getElementById('copyright-year').textContent = new Date().getFullYear();
 
 </script>
+
+
+
+<footer id="main-footer" class="sticky-footer">
+
+  Copyright &copy; <span id="copyright-year">2026</span> Roy Mbeche. All Rights Reserved.
+
+</footer>
 
 </body>
 
