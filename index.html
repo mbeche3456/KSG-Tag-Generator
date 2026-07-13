@@ -878,7 +878,7 @@
 
     font-family: Arial, sans-serif; font-weight: 800; font-size: 0.62rem;
 
-    color: #7F622C; letter-spacing: 0.5px;
+    color: #6B2424; letter-spacing: 0.5px;
 
   }
 
@@ -1516,7 +1516,7 @@
 
       font-weight: 800 !important; font-size: 0.62rem !important;
 
-      color: #7F622C !important; letter-spacing: 0.5px !important;
+      color: #6B2424 !important; letter-spacing: 0.5px !important;
 
       transform: none !important;
 
@@ -1664,7 +1664,7 @@
 
     font-size: 22px !important; font-weight: 700 !important;
 
-    letter-spacing: 1.5px !important; color: #A2A825 !important;
+    letter-spacing: 1.5px !important; color: #6B2424 !important;
 
     white-space: nowrap;
 
@@ -2131,12 +2131,6 @@
                       <option value="Attachee">Attachee</option>
 
                       <option value="Intern">Intern</option>
-
-                      <option value="Visitor">Visitor</option>
-
-                      <option value="Student">Student</option>
-
-                      <option value="Trainer">Trainer</option>
 
                     </select>
 
@@ -5446,11 +5440,11 @@ function buildTagHTML(t){
     pnoHtml = '';
     idnoHtml = '';
 
-    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
+    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important; font-size: 31px !important;">${(t.department||'—').toUpperCase()}</div>`;
 
     nameDisplay = (t.full_name||'').toUpperCase();
 
-    nameStyle = `top: ${nameTop} !important;`;
+    nameStyle = `top: ${nameTop} !important; font-size: 31px !important;`;
 
   } else if (cat === 'Intern') {
 
@@ -5464,11 +5458,11 @@ function buildTagHTML(t){
     pnoHtml = '';
     idnoHtml = '';
 
-    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important">${(t.department||'—').toUpperCase()}</div>`;
+    deptHtml = `<div class="tag-dept" style="top: ${deptTop} !important; font-size: 31px !important;">${(t.department||'—').toUpperCase()}</div>`;
 
     nameDisplay = (t.full_name||'').toUpperCase();
 
-    nameStyle = `top: ${nameTop} !important;`;
+    nameStyle = `top: ${nameTop} !important; font-size: 31px !important;`;
 
   } else if (cat) {
 
@@ -5884,7 +5878,7 @@ async function downloadSelectedTags(){
       return;
     }
 
-    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const pdf = new JsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     console.log('PDF created');
 
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -5897,11 +5891,11 @@ async function downloadSelectedTags(){
 
     const rowGap = 5;
 
-    const imgW = 86;
+    const imgW = 90;
 
-    
 
-    const xPositions = [margin, margin + imgW + colGap, margin + (imgW + colGap) * 2];
+
+    const xPositions = [margin, margin + imgW + colGap];
 
     
 
@@ -5939,13 +5933,13 @@ async function downloadSelectedTags(){
 
         const tag = selectedTags[index];
 
-        const pageIndex = Math.floor(index / 9);
+        const pageIndex = Math.floor(index / 8);
 
-        const positionIndex = index % 9;
+        const positionIndex = index % 8;
 
-        const rowIndex = Math.floor(positionIndex / 3);
+        const rowIndex = Math.floor(positionIndex / 2);
 
-        const colIndex = positionIndex % 3;
+        const colIndex = positionIndex % 2;
 
         console.log('Processing tag', index + 1, 'of', selectedTags.length);
 
@@ -5994,7 +5988,7 @@ async function downloadSelectedTags(){
 
         const imgH = canvasHeight;
 
-        const yPositions = [margin, margin + imgH + rowGap, margin + (imgH + rowGap) * 2];
+        const yPositions = [margin, margin + imgH + rowGap, margin + (imgH + rowGap) * 2, margin + (imgH + rowGap) * 3];
 
 
 
@@ -7561,7 +7555,7 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 
     'pt-dept':    {ff:'Times New Roman', size:25, w:700, ls:0.5, top:249, left:264, color:'#000000', bg:false},
 
-    'pt-orgname': {ff:'Arial',           size:22, w:700, ls:1.5, top:132, left:284, color:'#A2A825', bg:false},
+    'pt-orgname': {ff:'Arial',           size:22, w:700, ls:1.5, top:132, left:284, color:'#6B2424', bg:false},
 
   };
 
@@ -7574,6 +7568,8 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
     'pt-pno':     {ff:'Trebuchet MS', size:21, w:600, ls:0.3, top:218, left:33, color:'#000000', bg:false},
 
     'pt-idno':    {ff:'Trebuchet MS', size:21, w:600, ls:0.3, top:271, left:32, color:'#000000', bg:false},
+
+    'pt-orgname': {ff:'Arial',           size:22, w:700, ls:1.5, top:132, left:284, color:'#6B2424', bg:false},
 
   };
 
