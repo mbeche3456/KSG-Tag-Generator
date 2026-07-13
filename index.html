@@ -2132,6 +2132,12 @@
 
                       <option value="Intern">Intern</option>
 
+                      <option value="Visitor">Visitor</option>
+
+                      <option value="Student">Student</option>
+
+                      <option value="Trainer">Trainer</option>
+
                     </select>
 
                     <div class="field-error" id="err-cat"></div>
@@ -5891,7 +5897,7 @@ async function downloadSelectedTags(){
 
     const rowGap = 5;
 
-    const imgW = 90;
+    const imgW = 87;
 
 
 
@@ -5978,15 +5984,7 @@ async function downloadSelectedTags(){
 
         
 
-        if (canvasHeight === 0) {
-
-          canvasHeight = (canvas.height / canvas.width) * imgW;
-
-        }
-
-        
-
-        const imgH = canvasHeight;
+        const imgH = 54;
 
         const yPositions = [margin, margin + imgH + rowGap, margin + (imgH + rowGap) * 2, margin + (imgH + rowGap) * 3];
 
