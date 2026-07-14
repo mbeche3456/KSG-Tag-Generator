@@ -3410,13 +3410,11 @@ function load(){
 
   // Ensure all tags have p_number and id_number_value fields for Staff category
 
-  STATE.tags.forEach(tag => {
-
+  for(let i = 0; i < STATE.tags.length; i++){
+    const tag = STATE.tags[i];
     if (!tag.p_number) tag.p_number = '';
-
     if (!tag.id_number_value) tag.id_number_value = '';
-
-  });
+  }
 
   
 
@@ -3959,15 +3957,17 @@ function genRef(usedRefs = []) {
   const seenRefs = new Set();
 
   if (Array.isArray(STATE?.tags)) {
-    STATE.tags.forEach((tag) => {
+    for(let i = 0; i < STATE.tags.length; i++){
+      const tag = STATE.tags[i];
       if (tag?.reference_number) seenRefs.add(tag.reference_number);
-    });
+    }
   }
 
   if (Array.isArray(usedRefs)) {
-    usedRefs.forEach((ref) => {
+    for(let i = 0; i < usedRefs.length; i++){
+      const ref = usedRefs[i];
       if (ref) seenRefs.add(ref);
-    });
+    }
   }
 
   const now = new Date();
@@ -4835,21 +4835,15 @@ function clearForm(){
 
   const selects=['f-dept','f-cat'];
 
-  ids.forEach(id=>{
-
-    const el=document.getElementById(id);
-
+  for(let i = 0; i < ids.length; i++){
+    const el=document.getElementById(ids[i]);
     if(el) el.value='';
+  }
 
-  });
-
-  selects.forEach(id=>{
-
-    const el=document.getElementById(id);
-
+  for(let i = 0; i < selects.length; i++){
+    const el=document.getElementById(selects[i]);
     if(el) el.selectedIndex=0;
-
-  });
+  }
 
   const statusEl=document.getElementById('f-status');
 
@@ -4857,13 +4851,10 @@ function clearForm(){
 
   const errs=['err-name','err-idnum','err-dept','err-position','err-cat','err-pno','err-idno'];
 
-  errs.forEach(id=>{
-
-    const el=document.getElementById(id);
-
+  for(let i = 0; i < errs.length; i++){
+    const el=document.getElementById(errs[i]);
     if(el) el.textContent='';
-
-  });
+  }
 
   const inputEls=document.querySelectorAll('.gen-form input, .gen-form select');
 
@@ -5156,7 +5147,7 @@ function refreshTagDataViews(){
 
     if(document.getElementById('report-stats')) renderReports();
 
-  }, 0);
+  }, 50);
 
 }
 
@@ -5184,7 +5175,7 @@ function filterTags(search){
 
     renderManageTable();
 
-  }, 50);
+  }, 100);
 
 }
 
@@ -5224,7 +5215,16 @@ function renderManageTable(){
 
   if(selectAllCheckbox){
 
-    selectAllCheckbox.checked = totalVisible > 0 && filteredTags.every((t) => selectedIds.has(t.id));
+    let allSelected = totalVisible > 0;
+    if(allSelected && totalVisible > 0){
+      for(let i = 0; i < filteredTags.length; i++){
+        if(!selectedIds.has(filteredTags[i].id)){
+          allSelected = false;
+          break;
+        }
+      }
+    }
+    selectAllCheckbox.checked = allSelected;
 
   }
 
@@ -5262,7 +5262,7 @@ function renderManageTable(){
 
     const statusClass = t.status === 'Active' ? 'badge-status-active' : t.status === 'Inactive' ? 'badge-status-inactive' : 'badge-status-expired';
 
-    
+    const dateStr = new Date(t.date_generated).toLocaleDateString('en-GB');
 
     const tr = document.createElement('tr');
 
@@ -5282,7 +5282,7 @@ function renderManageTable(){
 
       <td><code style="font-size:0.8rem;font-family:'DM Mono',monospace">${t.id_number}</code></td>
 
-      <td>${new Date(t.date_generated).toLocaleDateString('en-GB')}</td>
+      <td>${dateStr}</td>
 
       <td><span class="badge ${statusClass}">${t.status || 'Active'}</span></td>
 
@@ -5739,7 +5739,7 @@ async function downloadEditPDF(){
 
     
 
-    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     const canvas = await captureTagElement(tagEl);
 
@@ -5839,7 +5839,10 @@ function exportAll(){
 
   const rows=[['Ref No.','Full Name','Department','Position','Category','ID Number','Date Generated','Status','Created By']];
 
-  STATE.tags.forEach(t=>rows.push([t.reference_number,t.full_name,t.department,t.position,t.category,t.id_number,new Date(t.date_generated).toLocaleDateString('en-GB'),t.status||'Active',t.created_by]));
+  for(let i = 0; i < STATE.tags.length; i++){
+    const t = STATE.tags[i];
+    rows.push([t.reference_number,t.full_name,t.department,t.position,t.category,t.id_number,new Date(t.date_generated).toLocaleDateString('en-GB'),t.status||'Active',t.created_by]);
+  }
 
   const csv=rows.map(r=>r.map(c=>`"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
 
@@ -5961,7 +5964,7 @@ async function downloadSelectedTags(){
         }
 
 
-        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         if (typeof captureTagElement !== 'function') {
           console.error('captureTagElement is not a function');
@@ -6091,7 +6094,11 @@ async function exportPDFReport(){
 
   pdf.text(`Total Tags: ${STATE.tags.length}`,20,y); y+=8;
 
-  pdf.text(`Active: ${STATE.tags.filter(t=>!t.status||t.status==='Active').length}`,20,y); y+=8;
+  let activeCount = 0;
+  for(let i = 0; i < STATE.tags.length; i++){
+    if(!STATE.tags[i].status || STATE.tags[i].status === 'Active') activeCount++;
+  }
+  pdf.text(`Active: ${activeCount}`,20,y); y+=8;
 
   pdf.text(`Report Generated: ${new Date().toLocaleString()}`,20,y); y+=14;
 
@@ -6101,11 +6108,15 @@ async function exportPDFReport(){
 
   const colX=[20,55,110,160,185];
 
-  headers.forEach((h,i)=>pdf.text(h,colX[i],y));
+  for(let i = 0; i < headers.length; i++){
+    pdf.text(headers[i],colX[i],y);
+  }
 
   y+=6; pdf.setFont('helvetica','normal');
 
-  STATE.tags.slice(0,30).forEach(t=>{
+  const tagsSlice = STATE.tags.slice(0,30);
+  for(let i = 0; i < tagsSlice.length; i++){
+    const t = tagsSlice[i];
 
     if(y>270){pdf.addPage(); y=20;}
 
@@ -6120,8 +6131,7 @@ async function exportPDFReport(){
     pdf.text(new Date(t.date_generated).toLocaleDateString('en-GB'),colX[4],y);
 
     y+=6;
-
-  });
+  }
 
   pdf.save(`KSG_Report_${new Date().toISOString().slice(0,10)}.pdf`);
 
@@ -6442,7 +6452,8 @@ function summarizeTagData(tags = STATE.tags){
 
 
 
-  tags.forEach(t => {
+  for(let i = 0; i < tags.length; i++){
+    const t = tags[i];
 
     if(!t.status || t.status === 'Active') active++;
 
@@ -6473,8 +6484,7 @@ function summarizeTagData(tags = STATE.tags){
 
 
     dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
-
-  });
+  }
 
 
 
@@ -7148,7 +7158,12 @@ function applySettings(){
 
   document.getElementById('set-gov').value=STATE.settings.gov;
 
-  ['dark','qr','email','dup','log'].forEach(k=>{ const el=document.getElementById('tgl-'+k); if(el) el.classList.toggle('on',!!STATE.settings[k]); });
+  const settingsKeys = ['dark','qr','email','dup','log'];
+  for(let i = 0; i < settingsKeys.length; i++){
+    const k = settingsKeys[i];
+    const el = document.getElementById('tgl-'+k);
+    if(el) el.classList.toggle('on',!!STATE.settings[k]);
+  }
 
 }
 
@@ -7764,6 +7779,7 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
   const TAG_W = 510, TAG_H = 317;
 
   let dragId=null, ox=0, oy=0;
+  let dragThrottle = null;
 
   function bindDrag(){
 
@@ -7815,7 +7831,11 @@ if(STATE.settings.darkMode) document.body.style.background='#0d1b2a';
 
       apply(dragId);
 
-      if($('sp-target').value===dragId) loadUI();
+      if(dragThrottle) cancelAnimationFrame(dragThrottle);
+      dragThrottle = requestAnimationFrame(() => {
+        if($('sp-target').value===dragId) loadUI();
+        dragThrottle = null;
+      });
 
     });
 
