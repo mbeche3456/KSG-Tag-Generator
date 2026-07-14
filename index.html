@@ -2132,12 +2132,6 @@
 
                       <option value="Intern">Intern</option>
 
-                      <option value="Visitor">Visitor</option>
-
-                      <option value="Student">Student</option>
-
-                      <option value="Trainer">Trainer</option>
-
                     </select>
 
                     <div class="field-error" id="err-cat"></div>
@@ -4082,6 +4076,8 @@ function toggleStaffFields(){
 
 
 
+
+
 function updatePreview(){
 
   if (previewRenderHandle) {
@@ -4717,13 +4713,13 @@ async function generateTagPDF(){
 
     const JsPDF = getJsPDF();
 
-    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [88, 55] });
 
     const pw = pdf.internal.pageSize.getWidth();
 
     const ph = pdf.internal.pageSize.getHeight();
 
-    const imgW = 86;
+    const imgW = 88;
 
     const imgH = (canvas.height / canvas.width) * imgW;
 
@@ -4907,11 +4903,11 @@ async function downloadModalPDF(){
 
     const JsPDF=getJsPDF();
 
-    const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:[90,56]});
+    const pdf=new JsPDF({orientation:'landscape',unit:'mm',format:[88,55]});
 
     const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
 
-    const imgW=86, imgH=(canvas.height/canvas.width)*imgW;
+    const imgW=88, imgH=(canvas.height/canvas.width)*imgW;
 
     pdf.addImage(img,'PNG',(pw-imgW)/2,(ph-imgH)/2,imgW,imgH);
 
@@ -5753,13 +5749,13 @@ async function downloadEditPDF(){
 
     const JsPDF = getJsPDF();
 
-    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [90, 56] });
+    const pdf = new JsPDF({ orientation: 'landscape', unit: 'mm', format: [88, 55] });
 
     const pw = pdf.internal.pageSize.getWidth();
 
     const ph = pdf.internal.pageSize.getHeight();
 
-    const imgW = 86;
+    const imgW = 88;
 
     const imgH = (canvas.height / canvas.width) * imgW;
 
@@ -5897,7 +5893,7 @@ async function downloadSelectedTags(){
 
     const rowGap = 5;
 
-    const imgW = 86;
+    const imgW = 88;
 
 
 
@@ -5984,7 +5980,7 @@ async function downloadSelectedTags(){
 
         
 
-        const imgH = 53;
+        const imgH = 55;
 
         const yPositions = [margin, margin + imgH + rowGap, margin + (imgH + rowGap) * 2, margin + (imgH + rowGap) * 3];
 
