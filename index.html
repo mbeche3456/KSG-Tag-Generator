@@ -850,9 +850,9 @@
 
   .id-tag {
 
-    width: 360px;
+    width: 510px;
 
-    height: 225px;
+    height: 317px;
 
     background: #ffffff;
 
@@ -1644,9 +1644,9 @@
 
   .id-tag {
 
-    width: clamp(360px, 65vw, 510px) !important;
+    width: 510px !important;
 
-    height: clamp(223px, 40vw, 317px) !important;
+    height: 317px !important;
 
     background: url('template.png') no-repeat center/100% 100% !important;
 
@@ -4509,6 +4509,10 @@ async function captureTagElement(el){
 
   if(!window.html2canvas) throw new Error('Image capture library failed to load.');
 
+  // Fixed dimensions for A4-compatible tag export
+  const fixedWidth = 510;
+  const fixedHeight = 317;
+
   return html2canvas(el, {
 
     scale: 1,
@@ -4521,11 +4525,15 @@ async function captureTagElement(el){
 
     logging: false,
 
-    width: el.offsetWidth,
+    width: fixedWidth,
 
-    height: el.offsetHeight,
+    height: fixedHeight,
 
     onclone: (clonedDoc, clonedEl) => {
+
+      // Force fixed dimensions for downloaded tag
+      clonedEl.style.width = fixedWidth + 'px';
+      clonedEl.style.height = fixedHeight + 'px';
 
       clonedEl.style.background = 'none';
 
@@ -4548,6 +4556,57 @@ async function captureTagElement(el){
         node.style.zIndex = '2';
 
       });
+
+      // Reset text elements to default fixed positions and sizes for download
+      const orgName = clonedEl.querySelector('.tag-org-name');
+      if (orgName) {
+        orgName.style.top = '132px';
+        orgName.style.left = '284px';
+        orgName.style.fontSize = '22px';
+      }
+
+      const tagName = clonedEl.querySelector('.tag-name');
+      if (tagName) {
+        tagName.style.top = '183px';
+        tagName.style.left = '257px';
+        tagName.style.fontSize = '30px';
+      }
+
+      const tagPosition = clonedEl.querySelector('.tag-position');
+      if (tagPosition) {
+        tagPosition.style.top = '226px';
+        tagPosition.style.left = '260px';
+        tagPosition.style.fontSize = '24px';
+      }
+
+      const tagDept = clonedEl.querySelector('.tag-dept');
+      if (tagDept) {
+        tagDept.style.top = '269px';
+        tagDept.style.left = '258px';
+        tagDept.style.fontSize = '25px';
+      }
+
+      // Reset Staff fields to default sizes
+      const ptName = clonedEl.querySelector('#pt-name');
+      if (ptName) {
+        ptName.style.top = '163px';
+        ptName.style.left = '30px';
+        ptName.style.fontSize = '22px';
+      }
+
+      const ptPno = clonedEl.querySelector('#pt-pno');
+      if (ptPno) {
+        ptPno.style.top = '218px';
+        ptPno.style.left = '33px';
+        ptPno.style.fontSize = '21px';
+      }
+
+      const ptIdno = clonedEl.querySelector('#pt-idno');
+      if (ptIdno) {
+        ptIdno.style.top = '271px';
+        ptIdno.style.left = '32px';
+        ptIdno.style.fontSize = '21px';
+      }
 
     },
 
